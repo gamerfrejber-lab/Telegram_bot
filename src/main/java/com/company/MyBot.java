@@ -1,39 +1,52 @@
 package com.company;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class MyBot extends TelegramLongPollingBot {
 
-    private final MainController mainController = new MainController();
+    private final MainController controller = new MainController(this);
 
     @Override
     public void onUpdateReceived(Update update) {
-
-        if (update.hasMessage()) {
-
-
-
-
-            Message message = update.getMessage();
-            Long chatId = message.getChatId();
-
-            if (message.hasText()) {
-
-                SendMessage sendMessage =   mainController.messageHandler( message );
-                send( sendMessage );
-
-            } else if (message.hasPhoto()) {
-
+        try {
+            if (update.hasMessage()) {
+                Message msg = update.getMessage();
+                controller.handleMessage(msg);
+            } else if (update.hasCallbackQuery()) {
+                CallbackQuery cq = update.getCallbackQuery();
+                AnswerCallbackQuery answer = new AnswerCallbackQuery();
+                answer.setCallbackQueryId(cq.getId());
+                try {
+                    execute(answer);
+                } catch (TelegramApiException ignored) {}
+                controller.handleCallback(cq);
             }
-
-        } else if (update.hasCallbackQuery()) {
-
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
 
+    // yuborish va Message qaytarish
+    public Message sendMsg(SendMessage sm) {
+        try {
+            return execute(sm);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void deleteMessage(Long chatId, Integer messageId) {
+        try {
+            execute(new DeleteMessage(chatId.toString(), messageId));
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -43,20 +56,8 @@ public class MyBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "8598681301:AAE6sON6nZWAe8gl25PnnEygF-yQQAVQ3UM";
+
+        String t = System.getenv("8598681301:AAE6sON6nZWAe8gl25PnnEygF-yQQAVQ3UM");
+        return t != null ? t : "8598681301:AAE6sON6nZWAe8gl25PnnEygF-yQQAVQ3UM";
     }
-
-
-
-
-    public void send(SendMessage sendMessage) {
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
 }

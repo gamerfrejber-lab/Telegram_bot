@@ -1,6 +1,4 @@
 package com.company;
-
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +23,7 @@ public class UserRepository {
     private void saveList(List<com.company.UserEntity> list) {
 
         try {
-            FileOutputStream fileOutputStream = new FileOutputStream("src/main/java/com/company/");
+            FileOutputStream fileOutputStream = new FileOutputStream("src/main/java/com/company/user_data.txt");
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
             objectOutputStream.writeObject(list);
             objectOutputStream.close();
@@ -38,11 +36,12 @@ public class UserRepository {
     }
 
 
-    private List<com.company.UserEntity> getList() {
+    List<com.company.UserEntity> getList() {
         try {
             FileInputStream fileInputStream = new FileInputStream("src/main/java/com/company/user_data.txt");
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
             List<com.company.UserEntity> list = (List<com.company.UserEntity>) objectInputStream.readObject();
+            System.out.println(list);
             objectInputStream.close();
             return list;
         } catch (FileNotFoundException e) {
@@ -63,7 +62,7 @@ public class UserRepository {
             List<com.company.UserEntity> list = new ArrayList<>();
             com.company.UserEntity entity = new com.company.UserEntity();
             entity.setId( 123L );
-            entity.setFullName("Ali Aliyev");
+            entity.setFullName("Suxrob_Anvarovich");
             list.add( entity );
             saveList(list);
         }
@@ -71,6 +70,6 @@ public class UserRepository {
 
 
     public List<com.company.UserEntity> getAllUsers() {
-        return null;
+        return getList();
     }
 }
