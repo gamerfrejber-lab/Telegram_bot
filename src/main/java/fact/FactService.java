@@ -1,8 +1,9 @@
-package com.company;
+package fact;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 
 public class FactService {
     private static final List<String> FACTS = new ArrayList<>();
