@@ -28,7 +28,7 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
 
     @Override
     public String getBotToken() {
-        return Config.require("BOT_TOKEN");
+        return Config.botToken();
     }
 
     @Override

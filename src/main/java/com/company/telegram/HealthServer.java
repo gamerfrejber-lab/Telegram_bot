@@ -23,17 +23,29 @@ public final class HealthServer {
     private HealthServer() { }
 
     public static void start() {
+        // PORT ni Render beradi. Agar u berilgan bo'lsa, portni eshitish majburiy:
+        // eshitilmasa Render xizmatni "ishga tushmadi" deb hisoblab o'chiradi.
+        String renderPort = Config.get("PORT", null);
+        boolean majburiy = renderPort != null && !renderPort.isBlank();
+        int port = Integer.parseInt((majburiy ? renderPort : Config.get("HEALTH_PORT", "8080")).trim());
+
         try {
-            // Render PORT ni o'zi beradi; lokalda HEALTH_PORT yoki 8080 ishlatiladi.
-            int port = Integer.parseInt(Config.get("PORT", Config.get("HEALTH_PORT", "8080")).trim());
             HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
             server.createContext("/", HealthServer::ok);
             server.setExecutor(null);
             server.start();
             System.out.println("HealthServer 0.0.0.0:" + port + " da ishga tushdi (javob: OK).");
         } catch (Exception e) {
-            // Bu server ishlamasa ham bot o'zi ishlashda davom etsin.
-            System.out.println("HealthServer ishga tushmadi: " + e.getMessage());
+            if (majburiy) {
+                // Serverda bu tuzatib bo'lmaydigan holat — jimgina davom etsak,
+                // xizmat "ishlayapti" ko'rinib, aslida hech kimga javob bermaydi.
+                throw new IllegalStateException(
+                        "HealthServer " + port + " portini eshita olmadi: " + e.getMessage(), e);
+            }
+            // Lokalda port band bo'lishi odatiy hol (masalan veb-sayt o'sha portda) —
+            // botning o'zi ishlashda davom etaveradi.
+            System.out.println("HealthServer ishga tushmadi (" + port + " porti band): " + e.getMessage());
+            System.out.println("Bot ishlashda davom etadi. Kerak bo'lsa boshqa port bering: HEALTH_PORT=8090");
         }
     }
 
