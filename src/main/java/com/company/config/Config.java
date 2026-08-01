@@ -36,6 +36,26 @@ public final class Config {
         return value;
     }
 
+    /**
+     * Bot tokenini oladi va ko'rinishini tekshiradi.
+     *
+     * Tekshiruv bejiz emas: token o'rniga tasodifan boshqa matn (masalan fayl yo'li yoki
+     * izoh) yozib qo'yilsa, Telegram kutubxonasi uni manzilga qo'shib yuboradi va
+     * "Illegal character in path" degan tushunarsiz xato beradi. Shuning uchun xatoni
+     * shu yerda, aniq tushuntirish bilan ushlaymiz.
+     */
+    public static String botToken() {
+        String token = require("BOT_TOKEN").trim();
+        if (!token.matches("\\d{6,}:[A-Za-z0-9_-]{30,}")) {
+            String korinish = token.length() <= 8 ? token : token.substring(0, 8) + "…";
+            throw new IllegalStateException(
+                    "BOT_TOKEN noto'g'ri ko'rinishda: \"" + korinish + "\"\n"
+                    + "Token \"123456789:AAG...\" ko'rinishida bo'lishi kerak — raqamlar, ikki nuqta, keyin uzun harf-raqamlar.\n"
+                    + "Fayl yo'li yoki izoh matni emas, aynan @BotFather bergan tokenning o'zi yozilishi kerak.");
+        }
+        return token;
+    }
+
     private static synchronized Properties load() {
         if (fileProperties != null) return fileProperties;
         try (FileInputStream input = new FileInputStream("bot.properties")) {
