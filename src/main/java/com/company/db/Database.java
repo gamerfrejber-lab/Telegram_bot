@@ -100,6 +100,18 @@ public final class Database {
 
                 CREATE INDEX IF NOT EXISTS dorixona_soov_holat_idx ON dorixona_soov (holat);
 
+                -- Dalil suratlari bazada baytlar sifatida saqlanadi. Telegram bergan file_id
+                -- faqat uni yuklagan botda ishlaydi, shuning uchun mijozlar boti o'sha id
+                -- bilan rasmni ko'rsata olmasdi — endi ikkala bot ham ko'rsata oladi.
+                ALTER TABLE dorixona_soov ADD COLUMN IF NOT EXISTS litsenziya_rasm BYTEA;
+                ALTER TABLE dorixona_soov ADD COLUMN IF NOT EXISTS jonli_rasm BYTEA;
+
+                -- Xabar navbati: ariza kelganda ikkala botdagi adminga, qaror chiqqanda
+                -- esa dorixona egasiga xabar berilishi kerak. Botlar bir-biriga
+                -- to'g'ridan-to'g'ri ulanmagani uchun shu bayroqlar orqali gaplashadi.
+                ALTER TABLE dorixona_soov ADD COLUMN IF NOT EXISTS adminga_xabar BOOLEAN DEFAULT TRUE;
+                ALTER TABLE dorixona_soov ADD COLUMN IF NOT EXISTS egaga_xabar BOOLEAN DEFAULT TRUE;
+
                 -- Bron: mijoz dorini oldindan band qiladi, dorixona egasiga xabar boradi.
                 CREATE TABLE IF NOT EXISTS bron (
                     id BIGSERIAL PRIMARY KEY,
