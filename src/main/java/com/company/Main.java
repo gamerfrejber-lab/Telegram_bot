@@ -27,7 +27,7 @@ public class Main {
             // Ariza mijozlar botida hal qilinsa ham, javobni egasiga shu bot yetkazadi.
             new com.company.service.SoovNotifier(bot.router()).start();
 
-            // Render bepul xizmati uxlab qolmasligi uchun tashqi so'rovlarga "OK" javob beradi.
+            // Render bepul xizmati uxlab qolmasli  gi uchun tashqi so'rovlarga "OK" javob beradi.
             HealthServer.start();
         } catch (IllegalStateException e) {
             // Sozlama xatosi — uzun stack trace o'rniga aniq tushuntirish ko'rsatamiz.
