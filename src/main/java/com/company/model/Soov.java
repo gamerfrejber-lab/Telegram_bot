@@ -26,6 +26,9 @@ public class Soov {
     private String telefon;
     private String litsenziyaFileId;
     private String jonliRasmFileId;
+    /** Rasm baytlari — file_id faqat uni olgan botda ishlagani uchun bazada saqlanadi. */
+    private byte[] litsenziyaRasm;
+    private byte[] jonliRasm;
     private String tekshiruvKodi;
     private String holat = KUTILMOQDA;
     private String adminIzoh;
@@ -56,6 +59,12 @@ public class Soov {
 
     public String getJonliRasmFileId() { return jonliRasmFileId; }
     public void setJonliRasmFileId(String jonliRasmFileId) { this.jonliRasmFileId = jonliRasmFileId; }
+
+    public byte[] getLitsenziyaRasm() { return litsenziyaRasm; }
+    public void setLitsenziyaRasm(byte[] litsenziyaRasm) { this.litsenziyaRasm = litsenziyaRasm; }
+
+    public byte[] getJonliRasm() { return jonliRasm; }
+    public void setJonliRasm(byte[] jonliRasm) { this.jonliRasm = jonliRasm; }
 
     public String getTekshiruvKodi() { return tekshiruvKodi; }
     public void setTekshiruvKodi(String tekshiruvKodi) { this.tekshiruvKodi = tekshiruvKodi; }

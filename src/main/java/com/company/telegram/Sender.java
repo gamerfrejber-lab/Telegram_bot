@@ -14,4 +14,11 @@ public interface Sender {
 
     /** Rasm yuboradi (file_id orqali — rasm Telegram serverida allaqachon bor). */
     void photo(long chatId, String fileId, String caption, ReplyKeyboard keyboard);
+
+    /**
+     * Rasmni Telegram'dan yuklab oladi. Baytlar bazaga saqlanadi, chunki file_id faqat
+     * uni olgan botda ishlaydi — mijozlar boti o'sha id bilan rasmni ko'rsata olmaydi.
+     * Yuklab bo'lmasa null qaytadi.
+     */
+    byte[] download(String fileId);
 }

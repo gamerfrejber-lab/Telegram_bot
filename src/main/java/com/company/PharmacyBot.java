@@ -5,6 +5,7 @@ import com.company.controller.Router;
 import com.company.telegram.Sender;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -67,6 +68,21 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
             execute(message);
         } catch (Exception e) {
             System.out.println("Xabar yuborilmadi (chat " + chatId + "): " + e.getMessage());
+        }
+    }
+
+    @Override
+    public byte[] download(String fileId) {
+        try {
+            GetFile getFile = new GetFile();
+            getFile.setFileId(fileId);
+            String path = execute(getFile).getFilePath();
+            try (java.io.InputStream in = downloadFileAsStream(path)) {
+                return in.readAllBytes();
+            }
+        } catch (Exception e) {
+            System.out.println("Rasmni yuklab bo'lmadi (" + fileId + "): " + e.getMessage());
+            return null;
         }
     }
 

@@ -24,6 +24,8 @@ public class Main {
             System.out.println("Dorixonalar boti ishga tushdi: @" + bot.getBotUsername());
 
             new BronNotifier(bot.router()).start();
+            // Ariza mijozlar botida hal qilinsa ham, javobni egasiga shu bot yetkazadi.
+            new com.company.service.SoovNotifier(bot.router()).start();
 
             // Render bepul xizmati uxlab qolmasligi uchun tashqi so'rovlarga "OK" javob beradi.
             HealthServer.start();

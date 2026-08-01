@@ -534,6 +534,10 @@ public class Router {
         soov.setTelefon(session.getTelefon());
         soov.setLitsenziyaFileId(session.getLitsenziyaFileId());
         soov.setJonliRasmFileId(fileId);
+        // Rasmlarni baytlar bilan saqlaymiz: file_id faqat shu botda ishlaydi, mijozlar
+        // boti esa o'sha id bilan dalil suratlarini ko'rsata olmaydi.
+        soov.setLitsenziyaRasm(sender.download(session.getLitsenziyaFileId()));
+        soov.setJonliRasm(sender.download(fileId));
         soov.setTekshiruvKodi(session.getTekshiruvKodi());
         long soovId = soovlar.add(soov);
         soov.setId(soovId);
@@ -815,17 +819,11 @@ public class Router {
             return "Bu ariza allaqachon hal qilingan";
         }
 
-        String egaTili = owners.til(soov.getTelegramId());
-        boolean ru = Texts.ru(egaTili);
-
+        // Egasiga javobni bu yerda emas, kuzatuvchi yetkazadi (hal() "aytilmagan" deb
+        // belgilab qo'ydi). Shunda ariza mijozlar botida hal qilinsa ham egasi bir xil
+        // xabar oladi va xabar ikki marta ketmaydi.
         if (!tasdiq) {
             sender.text(adminChatId, "❌ Ariza №" + soovId + " rad etildi.");
-            sender.text(soov.getTelegramId(), ru
-                    ? "❌ <b>Заявка отклонена.</b>\n\nВозможно, документы нечитаемы или код на фото не совпал.\n"
-                      + "Вы можете подать заявку заново или связаться с админом: @Anvarovich_2bot"
-                    : "❌ <b>Ariza rad etildi.</b>\n\nEhtimol hujjatlar o'qilmadi yoki suratdagi kod mos kelmadi.\n"
-                      + "Qaytadan ariza berishingiz yoki admin bilan bog'lanishingiz mumkin: @Anvarovich_2bot",
-                    Keyboards.guestMenu(egaTili));
             return "Rad etildi";
         }
 
@@ -834,17 +832,38 @@ public class Router {
             return "Dorixona allaqachon band";
         }
 
-        Dorixona d = pharmacies.getById(soov.getDorixonaId());
         sender.text(adminChatId, "✅ Ariza №" + soovId + " tasdiqlandi.\n\n🏥 "
                 + esc(soov.getDorixonaNomi()) + " → " + soov.getTelegramId());
-        sender.text(soov.getTelegramId(), (ru
-                ? "🎉 <b>Заявка одобрена!</b>\n\nАптека <b>" + esc(soov.getDorixonaNomi())
-                  + "</b> подключена к вашему аккаунту.\n\nТеперь вам доступен кабинет: товары, склад и брони."
-                : "🎉 <b>Ariza tasdiqlandi!</b>\n\n<b>" + esc(soov.getDorixonaNomi())
-                  + "</b> dorixonasi hisobingizga ulandi.\n\nEndi kabinet ochiq: mahsulotlar, ombor va bronlar.")
-                + (d == null ? "" : "\n\n" + obunaMatni(d, egaTili)),
-                Keyboards.ownerMenu(egaTili));
         return "Tasdiqlandi";
+    }
+
+    /**
+     * Ariza bo'yicha qarorni dorixona egasiga yetkazadi (SoovNotifier chaqiradi).
+     * Ariza qaysi botda hal qilinganidan qat'i nazar, egasi shu botda bo'lgani uchun
+     * javobni doim shu bot yuboradi.
+     */
+    public void qarorniEgasigaYetkaz(Soov soov) {
+        String lang = owners.til(soov.getTelegramId());
+        boolean ru = Texts.ru(lang);
+
+        if (Soov.TASDIQLANGAN.equals(soov.getHolat())) {
+            Dorixona d = pharmacies.getById(soov.getDorixonaId());
+            sender.text(soov.getTelegramId(), (ru
+                    ? "🎉 <b>Заявка одобрена!</b>\n\nАптека <b>" + esc(soov.getDorixonaNomi())
+                      + "</b> подключена к вашему аккаунту.\n\nТеперь вам доступен кабинет: товары, склад и брони."
+                    : "🎉 <b>Ariza tasdiqlandi!</b>\n\n<b>" + esc(soov.getDorixonaNomi())
+                      + "</b> dorixonasi hisobingizga ulandi.\n\nEndi kabinet ochiq: mahsulotlar, ombor va bronlar.")
+                    + (d == null ? "" : "\n\n" + obunaMatni(d, lang)),
+                    Keyboards.ownerMenu(lang));
+            return;
+        }
+
+        sender.text(soov.getTelegramId(), ru
+                ? "❌ <b>Заявка отклонена.</b>\n\nВозможно, документы нечитаемы или код на фото не совпал.\n"
+                  + "Вы можете подать заявку заново или связаться с админом: @Anvarovich_2bot"
+                : "❌ <b>Ariza rad etildi.</b>\n\nEhtimol hujjatlar o'qilmadi yoki suratdagi kod mos kelmadi.\n"
+                  + "Qaytadan ariza berishingiz yoki admin bilan bog'lanishingiz mumkin: @Anvarovich_2bot",
+                Keyboards.guestMenu(lang));
     }
 
     private String bronQarori(long chatId, long userId, String lang, long bronId, String amal) {
