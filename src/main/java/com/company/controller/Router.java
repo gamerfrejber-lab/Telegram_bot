@@ -68,6 +68,7 @@ public class Router {
         if (Keyboards.isUzbek(text) || Keyboards.isRussian(text)) {
             String yangi = Keyboards.isRussian(text) ? "ru" : "uz";
             owners.tilniSaqla(userId, yangi);
+            sessions.remove(userId);
             sender.text(chatId, Texts.t(yangi, "languageChanged"), menu(userId, yangi));
             return;
         }
@@ -1055,6 +1056,10 @@ public class Router {
             case ADMIN_OMBOR_HISOBOTI -> adminOmborHisobotiQadami(chatId, userId, lang, session, text);
             case ADMIN_OBUNA_UZAYTIRISH -> adminObunaQadami(chatId, userId, lang, session, text);
             case ADMIN_LOKATSIYA -> adminLokatsiyaQadami(chatId, userId, lang, session, text);
+            default -> {
+                sessions.remove(userId);
+                boshSahifa(chatId, userId, lang);
+            }
         }
     }
 
