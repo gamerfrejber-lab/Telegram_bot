@@ -97,6 +97,34 @@ public class DrugRepository {
         }
     }
 
+    /** Barcha dorixonalardan dori qidiradi (nomi bo'yicha, katta-kichik harf muhim emas). */
+    public List<Dori> qidirHammasi(String nomi) {
+        if (nomi == null || nomi.isBlank()) return new ArrayList<>();
+        String sql = "SELECT d.id, d.nomi, d.narx, d.mavjud, d.dorixona_id, p.nomi AS dorixona_nomi "
+                + "FROM dori d JOIN dorixona p ON p.id = d.dorixona_id "
+                + "WHERE d.nomi ILIKE ? ORDER BY d.nomi LIMIT 30";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + nomi.trim() + "%");
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Dori> list = new ArrayList<>();
+                while (rs.next()) {
+                    Dori d = new Dori();
+                    d.setId(rs.getLong("id"));
+                    d.setNomi(rs.getString("nomi"));
+                    d.setNarx(rs.getDouble("narx"));
+                    d.setMavjud(rs.getBoolean("mavjud"));
+                    d.setDorixonaId(rs.getLong("dorixona_id"));
+                    d.setDorixonaNomi(rs.getString("dorixona_nomi"));
+                    list.add(d);
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Dorilarni qidirib bo'lmadi", e);
+        }
+    }
+
     /** O'chiradi — faqat shu dorixonaga tegishli bo'lsa (birovnikini o'chirib bo'lmaydi). */
     public boolean ochir(long doriId, long dorixonaId) {
         try (Connection conn = Database.getConnection();

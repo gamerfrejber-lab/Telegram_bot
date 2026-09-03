@@ -56,6 +56,29 @@ public final class Keyboards {
     public static final String ADMIN_STATS_UZ = "📊 Statistika";
     public static final String ADMIN_STATS_RU = "📊 Статистика";
 
+    public static final String ADMIN_DRUG_SEARCH_UZ = "🔍 Dori qidirish";
+    public static final String ADMIN_DRUG_SEARCH_RU = "🔍 Поиск лекарства";
+    public static final String ADMIN_USERS_UZ = "👥 Userlarni tekshirish";
+    public static final String ADMIN_USERS_RU = "👥 Проверить пользователей";
+    public static final String ADMIN_ADD_DRUG_UZ = "➕ Dori qo'shish";
+    public static final String ADMIN_ADD_DRUG_RU = "➕ Добавить лекарство";
+    public static final String ADMIN_DEL_PHARMACY_UZ = "🗑 Dorixona o'chirish";
+    public static final String ADMIN_DEL_PHARMACY_RU = "🗑 Удалить аптеку";
+    public static final String ADMIN_DEL_DRUG_UZ = "🗑 Dori o'chirish";
+    public static final String ADMIN_DEL_DRUG_RU = "🗑 Удалить лекарство";
+    public static final String ADMIN_STOCK_IN_UZ = "📥 Kirim (keldi)";
+    public static final String ADMIN_STOCK_IN_RU = "📥 Приход";
+    public static final String ADMIN_STOCK_OUT_UZ = "📤 Chiqim (sotildi)";
+    public static final String ADMIN_STOCK_OUT_RU = "📤 Расход";
+    public static final String ADMIN_EDIT_PRICE_UZ = "✏️ Narx tahrirlash";
+    public static final String ADMIN_EDIT_PRICE_RU = "✏️ Изменить цену";
+    public static final String ADMIN_STOCK_REPORT_UZ = "📈 Ombor hisoboti";
+    public static final String ADMIN_STOCK_REPORT_RU = "📈 Отчёт по складу";
+    public static final String ADMIN_EXTEND_SUB_UZ = "🔄 Obunani uzaytirish";
+    public static final String ADMIN_EXTEND_SUB_RU = "🔄 Продлить подписку";
+    public static final String ADMIN_LOCATION_UZ = "📍 Lokatsiyani yangilash";
+    public static final String ADMIN_LOCATION_RU = "📍 Обновить адрес";
+
     private Keyboards() { }
 
     public static boolean isRu(String lang) { return "ru".equals(lang); }
@@ -85,8 +108,13 @@ public final class Keyboards {
     public static ReplyKeyboard adminMenu(String lang) {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
-        rows.add(row(adminAddPharmacy(lang), adminPharmacies(lang)));
+        rows.add(row(adminDrugSearch(lang), adminUsers(lang)));
+        rows.add(row(adminAddPharmacy(lang), adminAddDrug(lang)));
+        rows.add(row(adminDelPharmacy(lang), adminDelDrug(lang)));
+        rows.add(row(adminStockIn(lang), adminStockOut(lang)));
+        rows.add(row(adminEditPrice(lang), adminStockReport(lang)));
         rows.add(row(adminClaims(lang), adminOrders(lang)));
+        rows.add(row(adminExtendSub(lang), adminLocation(lang)));
         rows.add(row(adminStats(lang), help(lang)));
         return markup(rows);
     }
@@ -219,6 +247,17 @@ public final class Keyboards {
     public static boolean isAdminClaims(String text) { return eq(text, ADMIN_CLAIMS_UZ, ADMIN_CLAIMS_RU) || startsWith(text, ADMIN_CLAIMS_UZ, ADMIN_CLAIMS_RU); }
     public static boolean isAdminOrders(String text) { return eq(text, ADMIN_ORDERS_UZ, ADMIN_ORDERS_RU); }
     public static boolean isAdminStats(String text) { return eq(text, ADMIN_STATS_UZ, ADMIN_STATS_RU); }
+    public static boolean isAdminDrugSearch(String text) { return eq(text, ADMIN_DRUG_SEARCH_UZ, ADMIN_DRUG_SEARCH_RU); }
+    public static boolean isAdminUsers(String text) { return eq(text, ADMIN_USERS_UZ, ADMIN_USERS_RU); }
+    public static boolean isAdminAddDrug(String text) { return eq(text, ADMIN_ADD_DRUG_UZ, ADMIN_ADD_DRUG_RU); }
+    public static boolean isAdminDelPharmacy(String text) { return eq(text, ADMIN_DEL_PHARMACY_UZ, ADMIN_DEL_PHARMACY_RU); }
+    public static boolean isAdminDelDrug(String text) { return eq(text, ADMIN_DEL_DRUG_UZ, ADMIN_DEL_DRUG_RU); }
+    public static boolean isAdminStockIn(String text) { return eq(text, ADMIN_STOCK_IN_UZ, ADMIN_STOCK_IN_RU); }
+    public static boolean isAdminStockOut(String text) { return eq(text, ADMIN_STOCK_OUT_UZ, ADMIN_STOCK_OUT_RU); }
+    public static boolean isAdminEditPrice(String text) { return eq(text, ADMIN_EDIT_PRICE_UZ, ADMIN_EDIT_PRICE_RU); }
+    public static boolean isAdminStockReport(String text) { return eq(text, ADMIN_STOCK_REPORT_UZ, ADMIN_STOCK_REPORT_RU); }
+    public static boolean isAdminExtendSub(String text) { return eq(text, ADMIN_EXTEND_SUB_UZ, ADMIN_EXTEND_SUB_RU); }
+    public static boolean isAdminLocation(String text) { return eq(text, ADMIN_LOCATION_UZ, ADMIN_LOCATION_RU); }
 
     // ——— Tilga mos matnlar ———
 
@@ -240,6 +279,17 @@ public final class Keyboards {
     public static String adminClaims(String lang) { return isRu(lang) ? ADMIN_CLAIMS_RU : ADMIN_CLAIMS_UZ; }
     public static String adminOrders(String lang) { return isRu(lang) ? ADMIN_ORDERS_RU : ADMIN_ORDERS_UZ; }
     public static String adminStats(String lang) { return isRu(lang) ? ADMIN_STATS_RU : ADMIN_STATS_UZ; }
+    public static String adminDrugSearch(String lang) { return isRu(lang) ? ADMIN_DRUG_SEARCH_RU : ADMIN_DRUG_SEARCH_UZ; }
+    public static String adminUsers(String lang) { return isRu(lang) ? ADMIN_USERS_RU : ADMIN_USERS_UZ; }
+    public static String adminAddDrug(String lang) { return isRu(lang) ? ADMIN_ADD_DRUG_RU : ADMIN_ADD_DRUG_UZ; }
+    public static String adminDelPharmacy(String lang) { return isRu(lang) ? ADMIN_DEL_PHARMACY_RU : ADMIN_DEL_PHARMACY_UZ; }
+    public static String adminDelDrug(String lang) { return isRu(lang) ? ADMIN_DEL_DRUG_RU : ADMIN_DEL_DRUG_UZ; }
+    public static String adminStockIn(String lang) { return isRu(lang) ? ADMIN_STOCK_IN_RU : ADMIN_STOCK_IN_UZ; }
+    public static String adminStockOut(String lang) { return isRu(lang) ? ADMIN_STOCK_OUT_RU : ADMIN_STOCK_OUT_UZ; }
+    public static String adminEditPrice(String lang) { return isRu(lang) ? ADMIN_EDIT_PRICE_RU : ADMIN_EDIT_PRICE_UZ; }
+    public static String adminStockReport(String lang) { return isRu(lang) ? ADMIN_STOCK_REPORT_RU : ADMIN_STOCK_REPORT_UZ; }
+    public static String adminExtendSub(String lang) { return isRu(lang) ? ADMIN_EXTEND_SUB_RU : ADMIN_EXTEND_SUB_UZ; }
+    public static String adminLocation(String lang) { return isRu(lang) ? ADMIN_LOCATION_RU : ADMIN_LOCATION_UZ; }
 
     private static boolean eq(String text, String... values) {
         for (String value : values) if (value.equals(text)) return true;

@@ -123,6 +123,18 @@ public class PharmacyRepository {
         }
     }
 
+    public boolean manzilniYangila(long dorixonaId, String manzil) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "UPDATE dorixona SET manzil = ? WHERE id = ?")) {
+            stmt.setString(1, manzil);
+            stmt.setLong(2, dorixonaId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Manzilni yangilab bo'lmadi", e);
+        }
+    }
+
     public boolean ochir(long id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement("DELETE FROM dorixona WHERE id = ?")) {
