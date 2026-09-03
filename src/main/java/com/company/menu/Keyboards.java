@@ -51,6 +51,8 @@ public final class Keyboards {
     public static final String ADMIN_PHARMACIES_RU = "📋 Аптеки";
     public static final String ADMIN_CLAIMS_UZ = "📨 Arizalar";
     public static final String ADMIN_CLAIMS_RU = "📨 Заявки";
+    public static final String ADMIN_ORDERS_UZ = "🔔 Buyurtmalar";
+    public static final String ADMIN_ORDERS_RU = "🔔 Заказы";
     public static final String ADMIN_STATS_UZ = "📊 Statistika";
     public static final String ADMIN_STATS_RU = "📊 Статистика";
 
@@ -84,8 +86,8 @@ public final class Keyboards {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
         rows.add(row(adminAddPharmacy(lang), adminPharmacies(lang)));
-        rows.add(row(adminClaims(lang), adminStats(lang)));
-        rows.add(row(help(lang)));
+        rows.add(row(adminClaims(lang), adminOrders(lang)));
+        rows.add(row(adminStats(lang), help(lang)));
         return markup(rows);
     }
 
@@ -152,6 +154,16 @@ public final class Keyboards {
 
     // ——— Inline tugmalar ———
 
+    /** Admin uchun dorixona boshqaruvi: obuna uzaytirish va o'chirish. */
+    public static InlineKeyboardMarkup pharmacyActions(long dorixonaId, String lang) {
+        boolean ru = isRu(lang);
+        InlineKeyboardButton uzaytir = new InlineKeyboardButton(ru ? "🔄 Продлить" : "🔄 Uzaytirish");
+        uzaytir.setCallbackData("dx:uzaytir:" + dorixonaId);
+        InlineKeyboardButton ochir = new InlineKeyboardButton(ru ? "🗑 Удалить" : "🗑 O'chirish");
+        ochir.setCallbackData("dx:ochir:" + dorixonaId);
+        return inline(List.of(List.of(uzaytir, ochir)));
+    }
+
     /** Admin uchun ariza qarori: tasdiqlash yoki rad etish. */
     public static InlineKeyboardMarkup claimDecision(long soovId) {
         InlineKeyboardButton ok = new InlineKeyboardButton("✅ Tasdiqlash");
@@ -205,6 +217,7 @@ public final class Keyboards {
     public static boolean isAdminAddPharmacy(String text) { return eq(text, ADMIN_ADD_PHARMACY_UZ, ADMIN_ADD_PHARMACY_RU); }
     public static boolean isAdminPharmacies(String text) { return eq(text, ADMIN_PHARMACIES_UZ, ADMIN_PHARMACIES_RU); }
     public static boolean isAdminClaims(String text) { return eq(text, ADMIN_CLAIMS_UZ, ADMIN_CLAIMS_RU) || startsWith(text, ADMIN_CLAIMS_UZ, ADMIN_CLAIMS_RU); }
+    public static boolean isAdminOrders(String text) { return eq(text, ADMIN_ORDERS_UZ, ADMIN_ORDERS_RU); }
     public static boolean isAdminStats(String text) { return eq(text, ADMIN_STATS_UZ, ADMIN_STATS_RU); }
 
     // ——— Tilga mos matnlar ———
@@ -225,6 +238,7 @@ public final class Keyboards {
     public static String adminAddPharmacy(String lang) { return isRu(lang) ? ADMIN_ADD_PHARMACY_RU : ADMIN_ADD_PHARMACY_UZ; }
     public static String adminPharmacies(String lang) { return isRu(lang) ? ADMIN_PHARMACIES_RU : ADMIN_PHARMACIES_UZ; }
     public static String adminClaims(String lang) { return isRu(lang) ? ADMIN_CLAIMS_RU : ADMIN_CLAIMS_UZ; }
+    public static String adminOrders(String lang) { return isRu(lang) ? ADMIN_ORDERS_RU : ADMIN_ORDERS_UZ; }
     public static String adminStats(String lang) { return isRu(lang) ? ADMIN_STATS_RU : ADMIN_STATS_UZ; }
 
     private static boolean eq(String text, String... values) {
