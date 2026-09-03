@@ -51,6 +51,18 @@ public class BronRepository {
         }
     }
 
+    /** Admin uchun barcha faol bronlar (barcha dorixonalar bo'yicha). */
+    public List<Bron> barchasi() {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     SELECT + " WHERE b.holat IN ('" + Bron.YANGI + "', '" + Bron.TAYYOR + "') "
+                     + "ORDER BY b.id DESC LIMIT 30")) {
+            return read(stmt);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Bronlarni o'qib bo'lmadi", e);
+        }
+    }
+
     public Bron getById(long id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT + " WHERE b.id = ?")) {
