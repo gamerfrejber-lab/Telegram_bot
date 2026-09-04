@@ -234,6 +234,11 @@ public class Router {
                     Texts.ru(lang) ? "📍 <b>Обновить адрес</b>\n\nВыберите аптеку:"
                                   : "📍 <b>Lokatsiyani yangilash</b>\n\nDorixonani tanlang:");
         }
+        if (Keyboards.isAdminDrugUpdate(text)) {
+            return adminDorixonaTanla(chatId, userId, lang, Session.Turi.ADMIN_DORI_YANGILASH,
+                    Texts.ru(lang) ? "✏️ <b>Обновить лекарство</b>\n\nВыберите аптеку:"
+                                  : "✏️ <b>Dori yangilash</b>\n\nDorixonani tanlang:");
+        }
         return false;
     }
 
@@ -740,13 +745,11 @@ public class Router {
                         ? "❌ Сначала добавьте товар." : "❌ Avval mahsulot qo'shing.", Keyboards.ownerMenu(lang));
                 return true;
             }
-            Session session = new Session(kirim ? Session.Turi.KIRIM : Session.Turi.CHIQIM);
-            session.setDorixonaId(meniki.getId());
-            sessions.put(userId, session);
+            String prefix = kirim ? "ombor:kirim" : "ombor:chiqim";
             sender.text(chatId, kirim
-                            ? (Texts.ru(lang) ? "📥 <b>Что поступило? Выберите товар:</b>" : "📥 <b>Nima keldi? Mahsulotni tanlang:</b>")
-                            : (Texts.ru(lang) ? "📤 <b>Что продано? Выберите товар:</b>" : "📤 <b>Nima sotildi? Mahsulotni tanlang:</b>"),
-                    Keyboards.listMenu(lang, royxat.stream().map(Dori::getNomi).toList()));
+                            ? (Texts.ru(lang) ? "📥 <b>Nima keldi? Mahsulotni tanlang:</b>" : "📥 <b>Nima keldi? Mahsulotni tanlang:</b>")
+                            : (Texts.ru(lang) ? "📤 <b>Nima sotildi? Mahsulotni tanlang:</b>" : "📤 <b>Nima sotildi? Mahsulotni tanlang:</b>"),
+                    Keyboards.drugSelectInline(royxat, prefix, lang));
             return true;
         }
         if (Keyboards.isBrons(text)) {
@@ -772,21 +775,23 @@ public class Router {
                     : "📦 Hali mahsulot yo'q. «Mahsulot qo'shish» tugmasini bosing.", Keyboards.ownerMenu(lang));
             return;
         }
-        StringBuilder sb = new StringBuilder(ru
-                ? "📦 <b>Мои товары (" + royxat.size() + ")</b>\n\n"
-                : "📦 <b>Mahsulotlarim (" + royxat.size() + ")</b>\n\n");
+        sender.text(chatId, ru
+                ? "📦 <b>Mahsulotlarim (" + royxat.size() + ")</b>"
+                : "📦 <b>Mahsulotlarim (" + royxat.size() + ")</b>", Keyboards.ownerMenu(lang));
+
         int chiqarildi = 0;
         for (Dori dori : royxat) {
-            if (chiqarildi >= 40) break;
-            sb.append("• <b>").append(esc(dori.getNomi())).append("</b> — ")
-              .append(son(dori.getNarx())).append(ru ? " сум" : " so'm").append('\n')
-              .append("   ").append(qoldiqMatni(dori, ru)).append('\n');
+            if (chiqarildi >= 20) break;
+            String matn = "• <b>" + esc(dori.getNomi()) + "</b> — "
+                    + son(dori.getNarx()) + (ru ? " сум" : " so'm") + "\n"
+                    + "   " + qoldiqMatni(dori, ru);
+            sender.text(chatId, matn, Keyboards.productActions(dori.getId(), lang));
             chiqarildi++;
         }
         if (royxat.size() > chiqarildi) {
-            sb.append(ru ? "\n… и ещё " : "\n… va yana ").append(royxat.size() - chiqarildi);
+            sender.text(chatId, (ru ? "… va yana " : "… va yana ") + (royxat.size() - chiqarildi)
+                    + (ru ? " ta mahsulot" : " ta mahsulot"));
         }
-        sender.text(chatId, sb.toString(), Keyboards.ownerMenu(lang));
     }
 
     private String qoldiqMatni(Dori dori, boolean ru) {
@@ -1056,6 +1061,8 @@ public class Router {
             case ADMIN_OMBOR_HISOBOTI -> adminOmborHisobotiQadami(chatId, userId, lang, session, text);
             case ADMIN_OBUNA_UZAYTIRISH -> adminObunaQadami(chatId, userId, lang, session, text);
             case ADMIN_LOKATSIYA -> adminLokatsiyaQadami(chatId, userId, lang, session, text);
+            case ADMIN_DORI_YANGILASH -> adminDoriYangilashQadami(chatId, userId, lang, session, text);
+            case EGA_NARX_TAHRIRLASH -> egaNarxQadami(chatId, userId, lang, session, text);
             default -> {
                 sessions.remove(userId);
                 boshSahifa(chatId, userId, lang);
@@ -1285,6 +1292,12 @@ public class Router {
         if ("bron".equals(parts[0])) {
             return bronQarori(chatId, userId, lang, id, parts[1]);
         }
+        if ("dori".equals(parts[0])) {
+            return doriAmali(chatId, userId, lang, id, parts[1]);
+        }
+        if ("ombor".equals(parts[0])) {
+            return omborAmali(chatId, userId, lang, id, parts[1]);
+        }
         return null;
     }
 
@@ -1403,6 +1416,163 @@ public class Router {
         };
         sender.text(chatId, javob + " (№" + bronId + ")", Keyboards.ownerMenu(lang));
         return javob;
+    }
+
+    // ————————————————— Mahsulot inline tugmalari —————————————————
+
+    private String doriAmali(long chatId, long userId, String lang, long doriId, String amal) {
+        boolean ru = Texts.ru(lang);
+        Dorixona meniki = pharmacies.egasiBoyicha(userId);
+        if (meniki == null) return ru ? "Сначала подключите аптеку" : "Avval dorixonangizni ulang";
+
+        Dori dori = drugs.getById(doriId);
+        if (dori == null) return ru ? "Товар не найден" : "Mahsulot topilmadi";
+        if (dori.getDorixonaId() != meniki.getId()) return ru ? "Это не ваш товар" : "Bu sizning mahsulotingiz emas";
+
+        if ("narx".equals(amal)) {
+            Session session = new Session(Session.Turi.EGA_NARX_TAHRIRLASH);
+            session.setDorixonaId(meniki.getId());
+            session.setDoriId(doriId);
+            session.setDoriNomi(dori.getNomi());
+            sessions.put(userId, session);
+            sender.text(chatId, "📦 <b>" + esc(dori.getNomi()) + "</b>\n"
+                    + (ru ? "Текущая цена: " : "Hozirgi narxi: ") + son(dori.getNarx()) + (ru ? " сум\n\n" : " so'm\n\n")
+                    + (ru ? "✏️ <b>Введите новую цену:</b>" : "✏️ <b>Yangi narxni kiriting:</b>"),
+                    Keyboards.cancelMenu(lang));
+            return ru ? "Введите цену" : "Narxni kiriting";
+        }
+        if ("ochir".equals(amal)) {
+            drugs.ochir(doriId, meniki.getId());
+            sender.text(chatId, (ru ? "🗑 Товар «" : "🗑 «") + esc(dori.getNomi())
+                    + (ru ? "» удалён." : "» o'chirildi."), Keyboards.ownerMenu(lang));
+            return ru ? "Удалён" : "O'chirildi";
+        }
+        return null;
+    }
+
+    private String omborAmali(long chatId, long userId, String lang, long doriId, String amal) {
+        boolean ru = Texts.ru(lang);
+        Dorixona meniki = pharmacies.egasiBoyicha(userId);
+        if (meniki == null) return ru ? "Сначала подключите аптеку" : "Avval dorixonangizni ulang";
+
+        Dori dori = drugs.getById(doriId);
+        if (dori == null) return ru ? "Товар не найден" : "Mahsulot topilmadi";
+        if (dori.getDorixonaId() != meniki.getId()) return ru ? "Это не ваш товар" : "Bu sizning mahsulotingiz emas";
+
+        boolean kirim = "kirim".equals(amal);
+        Session session = new Session(kirim ? Session.Turi.KIRIM : Session.Turi.CHIQIM);
+        session.setDorixonaId(meniki.getId());
+        session.setDoriId(doriId);
+        session.setDoriNomi(dori.getNomi());
+        session.setQadam(1);
+        sessions.put(userId, session);
+
+        sender.text(chatId, (kirim
+                        ? (ru ? "📥 <b>Nechta keldi?</b>" : "📥 <b>Nechta keldi?</b>")
+                        : (ru ? "📤 <b>Nechta sotildi?</b>" : "📤 <b>Nechta sotildi?</b>"))
+                        + "\n\n📦 " + esc(dori.getNomi()) + "\n"
+                        + (ru ? "Сейчас на складе: <b>" : "Hozir omborda: <b>") + dori.getQoldiq()
+                        + (ru ? "</b> шт." : "</b> ta"),
+                Keyboards.cancelMenu(lang));
+        return kirim ? (ru ? "Введите количество" : "Sonni kiriting") : (ru ? "Введите количество" : "Sonni kiriting");
+    }
+
+    private void egaNarxQadami(long chatId, long userId, String lang, Session session, String text) {
+        boolean ru = Texts.ru(lang);
+        Double narx = narxOqi(text);
+        if (narx == null) {
+            sender.text(chatId, ru ? "❌ Неверная цена. Введите число, например 12000."
+                    : "❌ Narx noto'g'ri. Raqam kiriting, masalan 12000.", Keyboards.cancelMenu(lang));
+            return;
+        }
+        drugs.narxniYangila(session.getDoriId(), session.getDorixonaId(), narx);
+        sessions.remove(userId);
+        sender.text(chatId, (ru ? "✅ <b>Цена обновлена!</b>" : "✅ <b>Narx yangilandi!</b>")
+                + "\n\n📦 " + esc(session.getDoriNomi())
+                + "\n💵 " + son(narx) + (ru ? " сум" : " so'm"), Keyboards.ownerMenu(lang));
+    }
+
+    private void adminDoriYangilashQadami(long chatId, long userId, String lang, Session session, String text) {
+        boolean ru = Texts.ru(lang);
+        switch (session.getQadam()) {
+            case 0 -> {
+                Dorixona d = dorixonaniTop(chatId, lang, session, text);
+                if (d == null) return;
+                List<Dori> royxat = drugs.dorixonaniki(d.getId());
+                if (royxat.isEmpty()) {
+                    sessions.remove(userId);
+                    sender.text(chatId, ru ? "❌ В аптеке нет лекарств." : "❌ Bu dorixonada dori yo'q.",
+                            Keyboards.adminMenu(lang));
+                    return;
+                }
+                session.setQadam(1);
+                sender.text(chatId, "🏥 " + esc(d.getNomi()) + "\n\n"
+                        + (ru ? "✏️ <b>Какое лекарство обновить?</b>" : "✏️ <b>Qaysi dorini yangilash kerak?</b>"),
+                        Keyboards.listMenu(lang, royxat.stream().map(Dori::getNomi).toList()));
+            }
+            case 1 -> {
+                Dori dori = drugs.nomiBoyicha(session.getDorixonaId(), text);
+                if (dori == null) {
+                    List<Dori> royxat = drugs.dorixonaniki(session.getDorixonaId());
+                    sender.text(chatId, ru ? "❌ Не найдено. Выберите из списка." : "❌ Topilmadi. Ro'yxatdan tanlang.",
+                            Keyboards.listMenu(lang, royxat.stream().map(Dori::getNomi).toList()));
+                    return;
+                }
+                session.setDoriId(dori.getId());
+                session.setDoriNomi(dori.getNomi());
+                session.setNarx(dori.getNarx());
+                session.setQadam(2);
+                sender.text(chatId, "📦 <b>" + esc(dori.getNomi()) + "</b>\n"
+                        + (ru ? "Текущая цена: " : "Hozirgi narxi: ") + son(dori.getNarx()) + (ru ? " сум\n\n" : " so'm\n\n")
+                        + (ru ? "✏️ <b>Введите новое название (или «Пропустить»):</b>"
+                              : "✏️ <b>Yangi nomini kiriting (yoki «O'tkazib yuborish»):</b>"),
+                        Keyboards.skipCancelMenu(lang));
+            }
+            case 2 -> {
+                if (!Keyboards.isSkip(text) && !text.isBlank()) {
+                    session.setNomi(text);
+                }
+                session.setQadam(3);
+                sender.text(chatId, ru ? "💵 <b>Введите новую цену (или «Пропустить»):</b>"
+                        : "💵 <b>Yangi narxni kiriting (yoki «O'tkazib yuborish»):</b>",
+                        Keyboards.skipCancelMenu(lang));
+            }
+            case 3 -> {
+                Double narx = null;
+                if (!Keyboards.isSkip(text)) {
+                    narx = narxOqi(text);
+                    if (narx == null) {
+                        sender.text(chatId, ru ? "❌ Неверная цена." : "❌ Narx noto'g'ri.",
+                                Keyboards.skipCancelMenu(lang));
+                        return;
+                    }
+                }
+
+                boolean ozgardi = false;
+                if (session.getNomi() != null) {
+                    drugs.nominiYangila(session.getDoriId(), session.getDorixonaId(), session.getNomi());
+                    ozgardi = true;
+                }
+                if (narx != null) {
+                    drugs.narxniYangila(session.getDoriId(), session.getDorixonaId(), narx);
+                    ozgardi = true;
+                }
+
+                sessions.remove(userId);
+                if (!ozgardi) {
+                    sender.text(chatId, ru ? "ℹ️ Ничего не изменено." : "ℹ️ Hech narsa o'zgartirilmadi.",
+                            Keyboards.adminMenu(lang));
+                    return;
+                }
+                String korinish = session.getNomi() != null ? session.getNomi() : session.getDoriNomi();
+                sender.text(chatId, (ru ? "✅ <b>Лекарство обновлено!</b>" : "✅ <b>Dori yangilandi!</b>")
+                        + "\n\n🏥 " + esc(session.getDorixonaNomi())
+                        + "\n📦 " + esc(korinish)
+                        + (narx != null ? "\n💵 " + son(narx) + (ru ? " сум" : " so'm") : ""),
+                        Keyboards.adminMenu(lang));
+            }
+            default -> sessions.remove(userId);
+        }
     }
 
     // ————————————————— Yordamchilar —————————————————

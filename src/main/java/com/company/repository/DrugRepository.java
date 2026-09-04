@@ -97,6 +97,19 @@ public class DrugRepository {
         }
     }
 
+    public boolean nominiYangila(long doriId, long dorixonaId, String nomi) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "UPDATE dori SET nomi = ? WHERE id = ? AND dorixona_id = ?")) {
+            stmt.setString(1, nomi);
+            stmt.setLong(2, doriId);
+            stmt.setLong(3, dorixonaId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Dori nomini yangilab bo'lmadi", e);
+        }
+    }
+
     /** Barcha dorixonalardan dori qidiradi (nomi bo'yicha, katta-kichik harf muhim emas). */
     public List<Dori> qidirHammasi(String nomi) {
         if (nomi == null || nomi.isBlank()) return new ArrayList<>();

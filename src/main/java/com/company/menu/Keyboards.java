@@ -1,5 +1,6 @@
 package com.company.menu;
 
+import com.company.model.Dori;
 import com.company.model.Dorixona;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -78,6 +79,8 @@ public final class Keyboards {
     public static final String ADMIN_EXTEND_SUB_RU = "🔄 Продлить подписку";
     public static final String ADMIN_LOCATION_UZ = "📍 Lokatsiyani yangilash";
     public static final String ADMIN_LOCATION_RU = "📍 Обновить адрес";
+    public static final String ADMIN_DRUG_UPDATE_UZ = "✏️ Dori yangilash";
+    public static final String ADMIN_DRUG_UPDATE_RU = "✏️ Обновить лекарство";
 
     private Keyboards() { }
 
@@ -112,10 +115,11 @@ public final class Keyboards {
         rows.add(row(adminAddPharmacy(lang), adminAddDrug(lang)));
         rows.add(row(adminDelPharmacy(lang), adminDelDrug(lang)));
         rows.add(row(adminStockIn(lang), adminStockOut(lang)));
-        rows.add(row(adminEditPrice(lang), adminStockReport(lang)));
-        rows.add(row(adminClaims(lang), adminOrders(lang)));
-        rows.add(row(adminExtendSub(lang), adminLocation(lang)));
-        rows.add(row(adminStats(lang), help(lang)));
+        rows.add(row(adminEditPrice(lang), adminDrugUpdate(lang)));
+        rows.add(row(adminStockReport(lang), adminClaims(lang)));
+        rows.add(row(adminOrders(lang), adminExtendSub(lang)));
+        rows.add(row(adminLocation(lang), adminStats(lang)));
+        rows.add(row(help(lang)));
         return markup(rows);
     }
 
@@ -201,6 +205,31 @@ public final class Keyboards {
         return inline(List.of(List.of(ok, no)));
     }
 
+    /** Dorixona egasi uchun mahsulot boshqaruvi: narx o'zgartirish, o'chirish. */
+    public static InlineKeyboardMarkup productActions(long doriId, String lang) {
+        boolean ru = isRu(lang);
+        InlineKeyboardButton narx = new InlineKeyboardButton(ru ? "✏️ Цена" : "✏️ Narx");
+        narx.setCallbackData("dori:narx:" + doriId);
+        InlineKeyboardButton ochir = new InlineKeyboardButton(ru ? "🗑 Удалить" : "🗑 O'chirish");
+        ochir.setCallbackData("dori:ochir:" + doriId);
+        return inline(List.of(List.of(narx, ochir)));
+    }
+
+    /** Kirim/Chiqim uchun dori tanlash — har bir dori inline tugma. */
+    public static InlineKeyboardMarkup drugSelectInline(List<Dori> royxat, String prefix, String lang) {
+        boolean ru = isRu(lang);
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        int limit = Math.min(royxat.size(), 20);
+        for (int i = 0; i < limit; i++) {
+            Dori d = royxat.get(i);
+            String label = d.getNomi() + " — " + d.getQoldiq() + (ru ? " шт." : " ta");
+            InlineKeyboardButton btn = new InlineKeyboardButton(label);
+            btn.setCallbackData(prefix + ":" + d.getId());
+            rows.add(List.of(btn));
+        }
+        return inline(rows);
+    }
+
     /** Dorixona egasi uchun bron qarori. */
     public static InlineKeyboardMarkup bronActions(long bronId, boolean tayyorlangan) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -258,6 +287,7 @@ public final class Keyboards {
     public static boolean isAdminStockReport(String text) { return eq(text, ADMIN_STOCK_REPORT_UZ, ADMIN_STOCK_REPORT_RU); }
     public static boolean isAdminExtendSub(String text) { return eq(text, ADMIN_EXTEND_SUB_UZ, ADMIN_EXTEND_SUB_RU); }
     public static boolean isAdminLocation(String text) { return eq(text, ADMIN_LOCATION_UZ, ADMIN_LOCATION_RU); }
+    public static boolean isAdminDrugUpdate(String text) { return eq(text, ADMIN_DRUG_UPDATE_UZ, ADMIN_DRUG_UPDATE_RU); }
 
     // ——— Tilga mos matnlar ———
 
@@ -290,6 +320,7 @@ public final class Keyboards {
     public static String adminStockReport(String lang) { return isRu(lang) ? ADMIN_STOCK_REPORT_RU : ADMIN_STOCK_REPORT_UZ; }
     public static String adminExtendSub(String lang) { return isRu(lang) ? ADMIN_EXTEND_SUB_RU : ADMIN_EXTEND_SUB_UZ; }
     public static String adminLocation(String lang) { return isRu(lang) ? ADMIN_LOCATION_RU : ADMIN_LOCATION_UZ; }
+    public static String adminDrugUpdate(String lang) { return isRu(lang) ? ADMIN_DRUG_UPDATE_RU : ADMIN_DRUG_UPDATE_UZ; }
 
     private static boolean eq(String text, String... values) {
         for (String value : values) if (value.equals(text)) return true;
