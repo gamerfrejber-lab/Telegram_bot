@@ -239,6 +239,13 @@ public class Router {
                     Texts.ru(lang) ? "✏️ <b>Обновить лекарство</b>\n\nВыберите аптеку:"
                                   : "✏️ <b>Dori yangilash</b>\n\nDorixonani tanlang:");
         }
+        if (Keyboards.isAdminApi(text)) {
+            boolean ru = Texts.ru(lang);
+            sender.text(chatId, ru
+                    ? "🔧 <b>API Вручную</b>\n\nВыберите действие:"
+                    : "🔧 <b>API Qo'lda</b>\n\nAmalni tanlang:", Keyboards.apiManualMenu(lang));
+            return true;
+        }
         return false;
     }
 
@@ -1063,6 +1070,7 @@ public class Router {
             case ADMIN_LOKATSIYA -> adminLokatsiyaQadami(chatId, userId, lang, session, text);
             case ADMIN_DORI_YANGILASH -> adminDoriYangilashQadami(chatId, userId, lang, session, text);
             case EGA_NARX_TAHRIRLASH -> egaNarxQadami(chatId, userId, lang, session, text);
+            case ADMIN_API_QOLDA -> adminApiQadami(chatId, userId, lang, session, text);
             default -> {
                 sessions.remove(userId);
                 boshSahifa(chatId, userId, lang);
@@ -1297,6 +1305,10 @@ public class Router {
         }
         if ("ombor".equals(parts[0])) {
             return omborAmali(chatId, userId, lang, id, parts[1]);
+        }
+        if ("api".equals(parts[0])) {
+            if (!AdminPanel.isAdmin(userId)) return "Ruxsat yo'q";
+            return apiAmali(chatId, userId, lang, parts[1]);
         }
         return null;
     }
@@ -1572,6 +1584,135 @@ public class Router {
                         Keyboards.adminMenu(lang));
             }
             default -> sessions.remove(userId);
+        }
+    }
+
+    // ————————————————— API Qo'lda —————————————————
+
+    private String apiAmali(long chatId, long userId, String lang, String amal) {
+        boolean ru = Texts.ru(lang);
+        Session session = new Session(Session.Turi.ADMIN_API_QOLDA);
+        session.setNomi(amal);
+        sessions.put(userId, session);
+
+        if ("xabar".equals(amal)) {
+            sender.text(chatId, ru ? "📨 <b>Telegram ID kiriting:</b>" : "📨 <b>Telegram ID kiriting:</b>",
+                    Keyboards.cancelMenu(lang));
+            return "Telegram ID kiriting";
+        }
+        if ("dorixona".equals(amal)) {
+            sender.text(chatId, ru ? "🏥 <b>Dorixona ID raqamini kiriting:</b>" : "🏥 <b>Dorixona ID raqamini kiriting:</b>",
+                    Keyboards.cancelMenu(lang));
+            return "ID kiriting";
+        }
+        if ("dori".equals(amal)) {
+            sender.text(chatId, ru ? "💊 <b>Dori ID raqamini kiriting:</b>" : "💊 <b>Dori ID raqamini kiriting:</b>",
+                    Keyboards.cancelMenu(lang));
+            return "ID kiriting";
+        }
+        sessions.remove(userId);
+        return null;
+    }
+
+    private void adminApiQadami(long chatId, long userId, String lang, Session session, String text) {
+        boolean ru = Texts.ru(lang);
+        String amal = session.getNomi();
+
+        if ("xabar".equals(amal)) {
+            apiXabarQadami(chatId, userId, lang, session, text);
+            return;
+        }
+        if ("dorixona".equals(amal)) {
+            Long id = idOqi(text);
+            if (id == null) {
+                sender.text(chatId, "❌ ID raqam bo'lishi kerak.", Keyboards.cancelMenu(lang));
+                return;
+            }
+            sessions.remove(userId);
+            Dorixona d = pharmacies.getById(id);
+            if (d == null) {
+                sender.text(chatId, "❌ Dorixona topilmadi (ID: " + id + ")", Keyboards.adminMenu(lang));
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("🏥 <b>").append(esc(d.getNomi())).append("</b>\n");
+            sb.append("🆔 ").append(d.getId()).append('\n');
+            if (d.getManzil() != null && !d.getManzil().isBlank())
+                sb.append("📍 ").append(esc(d.getManzil())).append('\n');
+            if (d.getTelefon() != null && !d.getTelefon().isBlank())
+                sb.append("☎️ ").append(esc(d.getTelefon())).append('\n');
+            sb.append(obunaMatni(d, lang)).append('\n');
+            sb.append(d.getEgasiTelegramId() == null
+                    ? "👤 egasi ulanmagan"
+                    : "👤 egasi: <code>" + d.getEgasiTelegramId() + "</code>");
+            int dorilar = drugs.dorixonaniki(d.getId()).size();
+            sb.append("\n💊 mahsulotlar: <b>").append(dorilar).append("</b>");
+            sender.text(chatId, sb.toString(), Keyboards.adminMenu(lang));
+            return;
+        }
+        if ("dori".equals(amal)) {
+            Long id = idOqi(text);
+            if (id == null) {
+                sender.text(chatId, "❌ ID raqam bo'lishi kerak.", Keyboards.cancelMenu(lang));
+                return;
+            }
+            sessions.remove(userId);
+            Dori d = drugs.getById(id);
+            if (d == null) {
+                sender.text(chatId, "❌ Dori topilmadi (ID: " + id + ")", Keyboards.adminMenu(lang));
+                return;
+            }
+            Dorixona dx = pharmacies.getById(d.getDorixonaId());
+            StringBuilder sb = new StringBuilder();
+            sb.append("💊 <b>").append(esc(d.getNomi())).append("</b>\n");
+            sb.append("🆔 ").append(d.getId()).append('\n');
+            sb.append("💵 ").append(son(d.getNarx())).append(" so'm\n");
+            sb.append("📊 qoldiq: <b>").append(d.getQoldiq()).append("</b> ta\n");
+            sb.append("🏥 ").append(dx != null ? esc(dx.getNomi()) : "dorixona: " + d.getDorixonaId());
+            sender.text(chatId, sb.toString(), Keyboards.adminMenu(lang));
+            return;
+        }
+        sessions.remove(userId);
+        boshSahifa(chatId, userId, lang);
+    }
+
+    private void apiXabarQadami(long chatId, long userId, String lang, Session session, String text) {
+        boolean ru = Texts.ru(lang);
+        if (session.getQadam() == 0) {
+            Long telegramId = idOqi(text);
+            if (telegramId == null) {
+                sender.text(chatId, "❌ Telegram ID raqam bo'lishi kerak.", Keyboards.cancelMenu(lang));
+                return;
+            }
+            session.setDorixonaId(telegramId);
+            session.setQadam(1);
+            sender.text(chatId, "📨 <b>Xabar matnini kiriting:</b>\n\n"
+                    + "Kimga: <code>" + telegramId + "</code>", Keyboards.cancelMenu(lang));
+            return;
+        }
+        if (text.isBlank()) {
+            sender.text(chatId, "❌ Matn bo'sh bo'lmasin.", Keyboards.cancelMenu(lang));
+            return;
+        }
+        long kimga = session.getDorixonaId();
+        sessions.remove(userId);
+        try {
+            sender.text(kimga, text);
+            sender.text(chatId, "✅ Xabar yuborildi!\n\nKimga: <code>" + kimga + "</code>",
+                    Keyboards.adminMenu(lang));
+        } catch (Exception e) {
+            sender.text(chatId, "❌ Xabar yuborib bo'lmadi. Foydalanuvchi botni bloklagan yoki ID noto'g'ri.",
+                    Keyboards.adminMenu(lang));
+        }
+    }
+
+    private Long idOqi(String text) {
+        if (text == null) return null;
+        String cleaned = text.trim().replace(" ", "");
+        try {
+            return Long.parseLong(cleaned);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

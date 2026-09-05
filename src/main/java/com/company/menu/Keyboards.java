@@ -81,6 +81,8 @@ public final class Keyboards {
     public static final String ADMIN_LOCATION_RU = "📍 Обновить адрес";
     public static final String ADMIN_DRUG_UPDATE_UZ = "✏️ Dori yangilash";
     public static final String ADMIN_DRUG_UPDATE_RU = "✏️ Обновить лекарство";
+    public static final String ADMIN_API_UZ = "🔧 API Qo'lda";
+    public static final String ADMIN_API_RU = "🔧 API Вручную";
 
     private Keyboards() { }
 
@@ -119,7 +121,7 @@ public final class Keyboards {
         rows.add(row(adminStockReport(lang), adminClaims(lang)));
         rows.add(row(adminOrders(lang), adminExtendSub(lang)));
         rows.add(row(adminLocation(lang), adminStats(lang)));
-        rows.add(row(help(lang)));
+        rows.add(row(adminApi(lang), help(lang)));
         return markup(rows);
     }
 
@@ -230,6 +232,26 @@ public final class Keyboards {
         return inline(rows);
     }
 
+    /** Admin uchun API Qo'lda menyusi. */
+    public static InlineKeyboardMarkup apiManualMenu(String lang) {
+        boolean ru = isRu(lang);
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton xabar = new InlineKeyboardButton(ru ? "📨 Xabar yuborish" : "📨 Xabar yuborish");
+        xabar.setCallbackData("api:xabar:0");
+        rows.add(List.of(xabar));
+
+        InlineKeyboardButton dorixona = new InlineKeyboardButton(ru ? "🏥 Dorixona (ID)" : "🏥 Dorixona (ID)");
+        dorixona.setCallbackData("api:dorixona:0");
+        rows.add(List.of(dorixona));
+
+        InlineKeyboardButton dori = new InlineKeyboardButton(ru ? "💊 Dori (ID)" : "💊 Dori (ID)");
+        dori.setCallbackData("api:dori:0");
+        rows.add(List.of(dori));
+
+        return inline(rows);
+    }
+
     /** Dorixona egasi uchun bron qarori. */
     public static InlineKeyboardMarkup bronActions(long bronId, boolean tayyorlangan) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -288,6 +310,7 @@ public final class Keyboards {
     public static boolean isAdminExtendSub(String text) { return eq(text, ADMIN_EXTEND_SUB_UZ, ADMIN_EXTEND_SUB_RU); }
     public static boolean isAdminLocation(String text) { return eq(text, ADMIN_LOCATION_UZ, ADMIN_LOCATION_RU); }
     public static boolean isAdminDrugUpdate(String text) { return eq(text, ADMIN_DRUG_UPDATE_UZ, ADMIN_DRUG_UPDATE_RU); }
+    public static boolean isAdminApi(String text) { return eq(text, ADMIN_API_UZ, ADMIN_API_RU); }
 
     // ——— Tilga mos matnlar ———
 
@@ -321,6 +344,7 @@ public final class Keyboards {
     public static String adminExtendSub(String lang) { return isRu(lang) ? ADMIN_EXTEND_SUB_RU : ADMIN_EXTEND_SUB_UZ; }
     public static String adminLocation(String lang) { return isRu(lang) ? ADMIN_LOCATION_RU : ADMIN_LOCATION_UZ; }
     public static String adminDrugUpdate(String lang) { return isRu(lang) ? ADMIN_DRUG_UPDATE_RU : ADMIN_DRUG_UPDATE_UZ; }
+    public static String adminApi(String lang) { return isRu(lang) ? ADMIN_API_RU : ADMIN_API_UZ; }
 
     private static boolean eq(String text, String... values) {
         for (String value : values) if (value.equals(text)) return true;

@@ -25,7 +25,8 @@ public class Session {
         ADMIN_OBUNA_UZAYTIRISH,
         ADMIN_LOKATSIYA,
         ADMIN_DORI_YANGILASH,
-        EGA_NARX_TAHRIRLASH
+        EGA_NARX_TAHRIRLASH,
+        ADMIN_API_QOLDA
     }
 
     private final Turi turi;
