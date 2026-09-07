@@ -1,5 +1,6 @@
 package com.company.telegram;
 
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 /**
@@ -11,6 +12,8 @@ public interface Sender {
     void text(long chatId, String html);
 
     void text(long chatId, String html, ReplyKeyboard keyboard);
+
+    void inlineText(long chatId, String html, InlineKeyboardMarkup markup);
 
     /** Rasm yuboradi (file_id orqali — rasm Telegram serverida allaqachon bor). */
     void photo(long chatId, String fileId, String caption, ReplyKeyboard keyboard);

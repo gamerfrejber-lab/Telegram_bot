@@ -45,6 +45,11 @@ public final class Keyboards {
     public static final String SUBSCRIPTION_UZ = "🗓 Obunam";
     public static final String SUBSCRIPTION_RU = "🗓 Моя подписка";
 
+    public static final String ADD_FROM_FILE_UZ = "📁 Fayldan";
+    public static final String ADD_FROM_FILE_RU = "📁 Из файла";
+    public static final String ADD_MANUALLY_UZ = "✍️ Qo'lda";
+    public static final String ADD_MANUALLY_RU = "✍️ Вручную";
+
     public static final String ADMIN_ADD_PHARMACY_UZ = "➕ Dorixona qo'shish";
     public static final String ADMIN_ADD_PHARMACY_RU = "➕ Добавить аптеку";
     public static final String ADMIN_PHARMACIES_UZ = "📋 Dorixonalar";
@@ -88,6 +93,13 @@ public final class Keyboards {
         rows.add(row(adminAddPharmacy(lang), adminPharmacies(lang)));
         rows.add(row(adminClaims(lang), adminOrders(lang)));
         rows.add(row(adminStats(lang), help(lang)));
+        return markup(rows);
+    }
+
+    public static ReplyKeyboard addMethodMenu(String lang) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(row(addManually(lang), addFromFile(lang)));
+        rows.add(row(cancel(lang)));
         return markup(rows);
     }
 
@@ -192,6 +204,14 @@ public final class Keyboards {
         return inline(rows);
     }
 
+    /** Mahsulot uchun: narx o'zgartirish va o'chirish. */
+    public static InlineKeyboardMarkup productActions(long doriId, String lang) {
+        boolean ru = isRu(lang);
+        InlineKeyboardButton ochir = new InlineKeyboardButton(ru ? "🗑 Удалить" : "🗑 O'chirish");
+        ochir.setCallbackData("dori:ochir:" + doriId);
+        return inline(List.of(List.of(ochir)));
+    }
+
     private static InlineKeyboardMarkup inline(List<List<InlineKeyboardButton>> rows) {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(rows);
@@ -209,6 +229,8 @@ public final class Keyboards {
     public static boolean isClaim(String text) { return eq(text, CLAIM_UZ, CLAIM_RU); }
     public static boolean isProducts(String text) { return eq(text, PRODUCTS_UZ, PRODUCTS_RU); }
     public static boolean isAddProduct(String text) { return eq(text, ADD_PRODUCT_UZ, ADD_PRODUCT_RU); }
+    public static boolean isAddFromFile(String text) { return eq(text, ADD_FROM_FILE_UZ, ADD_FROM_FILE_RU); }
+    public static boolean isAddManually(String text) { return eq(text, ADD_MANUALLY_UZ, ADD_MANUALLY_RU); }
     public static boolean isStockIn(String text) { return eq(text, STOCK_IN_UZ, STOCK_IN_RU); }
     public static boolean isStockOut(String text) { return eq(text, STOCK_OUT_UZ, STOCK_OUT_RU); }
     public static boolean isBrons(String text) { return eq(text, BRONS_UZ, BRONS_RU) || startsWith(text, BRONS_UZ, BRONS_RU); }
@@ -230,6 +252,8 @@ public final class Keyboards {
     public static String claim(String lang) { return isRu(lang) ? CLAIM_RU : CLAIM_UZ; }
     public static String products(String lang) { return isRu(lang) ? PRODUCTS_RU : PRODUCTS_UZ; }
     public static String addProduct(String lang) { return isRu(lang) ? ADD_PRODUCT_RU : ADD_PRODUCT_UZ; }
+    public static String addFromFile(String lang) { return isRu(lang) ? ADD_FROM_FILE_RU : ADD_FROM_FILE_UZ; }
+    public static String addManually(String lang) { return isRu(lang) ? ADD_MANUALLY_RU : ADD_MANUALLY_UZ; }
     public static String stockIn(String lang) { return isRu(lang) ? STOCK_IN_RU : STOCK_IN_UZ; }
     public static String stockOut(String lang) { return isRu(lang) ? STOCK_OUT_RU : STOCK_OUT_UZ; }
     public static String brons(String lang) { return isRu(lang) ? BRONS_RU : BRONS_UZ; }

@@ -15,6 +15,12 @@ import com.company.repository.SoovRepository;
 import com.company.repository.StockRepository;
 import com.company.telegram.Sender;
 import com.company.text.Texts;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Contact;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -22,6 +28,7 @@ import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
+import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -83,6 +90,11 @@ public class Router {
             arizaRasm(chatId, userId, lang, session, message.getPhoto(), from);
             return;
         }
+        if (message.hasDocument() && session != null
+                && session.getTuri() == Session.Turi.MAHSULOT_QOSHISH && session.isFayldan()) {
+            fayldanImport(chatId, userId, lang, session, message.getDocument().getFileId());
+            return;
+        }
 
         if (Keyboards.isCancel(text)) {
             sessions.remove(userId);
@@ -100,8 +112,12 @@ public class Router {
         }
 
         if (session != null) {
-            sessionQadami(chatId, userId, lang, session, text);
-            return;
+            if (menyuTugmasiBosildi(text, userId)) {
+                sessions.remove(userId);
+            } else {
+                sessionQadami(chatId, userId, lang, session, text);
+                return;
+            }
         }
 
         if (AdminPanel.isAdmin(userId) && adminTugmasi(chatId, userId, lang, text)) return;
@@ -142,6 +158,17 @@ public class Router {
     private ReplyKeyboard menu(long userId, String lang) {
         if (AdminPanel.isAdmin(userId)) return Keyboards.adminMenu(lang);
         return pharmacies.egasiBoyicha(userId) != null ? Keyboards.ownerMenu(lang) : Keyboards.guestMenu(lang);
+    }
+
+    private boolean menyuTugmasiBosildi(String text, long userId) {
+        if (Keyboards.isProducts(text) || Keyboards.isAddProduct(text)
+                || Keyboards.isStockIn(text) || Keyboards.isStockOut(text)
+                || Keyboards.isBrons(text) || Keyboards.isReport(text)
+                || Keyboards.isSubscription(text) || Keyboards.isClaim(text)) return true;
+        if (AdminPanel.isAdmin(userId) && (Keyboards.isAdminAddPharmacy(text)
+                || Keyboards.isAdminPharmacies(text) || Keyboards.isAdminClaims(text)
+                || Keyboards.isAdminOrders(text) || Keyboards.isAdminStats(text))) return true;
+        return false;
     }
 
     // ————————————————— Admin bo'limi —————————————————
@@ -304,8 +331,8 @@ public class Router {
             session.setDorixonaId(meniki.getId());
             sessions.put(userId, session);
             sender.text(chatId, Texts.ru(lang)
-                    ? "📦 <b>Название товара:</b>\n\nНапример: Парацетамол, Бинт стерильный"
-                    : "📦 <b>Mahsulot nomi:</b>\n\nMasalan: Paracetamol, Bint steril", Keyboards.cancelMenu(lang));
+                    ? "📦 <b>Как добавить товар?</b>\n\nВыберите способ:"
+                    : "📦 <b>Mahsulot qo'shish usuli?</b>\n\nUsulni tanlang:", Keyboards.addMethodMenu(lang));
             return true;
         }
         if (Keyboards.isStockIn(text) || Keyboards.isStockOut(text)) {
@@ -348,21 +375,22 @@ public class Router {
                     : "📦 Hali mahsulot yo'q. «Mahsulot qo'shish» tugmasini bosing.", Keyboards.ownerMenu(lang));
             return;
         }
-        StringBuilder sb = new StringBuilder(ru
-                ? "📦 <b>Мои товары (" + royxat.size() + ")</b>\n\n"
-                : "📦 <b>Mahsulotlarim (" + royxat.size() + ")</b>\n\n");
+        sender.text(chatId, ru
+                ? "📦 <b>Мои товары (" + royxat.size() + ")</b>"
+                : "📦 <b>Mahsulotlarim (" + royxat.size() + ")</b>", Keyboards.ownerMenu(lang));
         int chiqarildi = 0;
         for (Dori dori : royxat) {
-            if (chiqarildi >= 40) break;
-            sb.append("• <b>").append(esc(dori.getNomi())).append("</b> — ")
-              .append(son(dori.getNarx())).append(ru ? " сум" : " so'm").append('\n')
-              .append("   ").append(qoldiqMatni(dori, ru)).append('\n');
+            if (chiqarildi >= 30) {
+                sender.text(chatId, ru ? "… и ещё <b>" + (royxat.size() - chiqarildi)
+                        + "</b> товаров." : "… va yana <b>" + (royxat.size() - chiqarildi) + "</b> ta mahsulot.");
+                break;
+            }
+            String matn = "📦 <b>" + esc(dori.getNomi()) + "</b>\n"
+                    + "💵 " + son(dori.getNarx()) + (ru ? " сум" : " so'm") + "\n"
+                    + qoldiqMatni(dori, ru);
+            sender.inlineText(chatId, matn, Keyboards.productActions(dori.getId(), lang));
             chiqarildi++;
         }
-        if (royxat.size() > chiqarildi) {
-            sb.append(ru ? "\n… и ещё " : "\n… va yana ").append(royxat.size() - chiqarildi);
-        }
-        sender.text(chatId, sb.toString(), Keyboards.ownerMenu(lang));
     }
 
     private String qoldiqMatni(Dori dori, boolean ru) {
@@ -714,6 +742,34 @@ public class Router {
         boolean ru = Texts.ru(lang);
         switch (session.getQadam()) {
             case 0 -> {
+                if (Keyboards.isAddManually(text)) {
+                    session.setFayldan(false);
+                    session.setQadam(1);
+                    sender.text(chatId, ru
+                            ? "📦 <b>Название товара:</b>\n\nНапример: Парацетамол, Бинт стерильный"
+                            : "📦 <b>Mahsulot nomi:</b>\n\nMasalan: Paratsetamol, Bint steril", Keyboards.cancelMenu(lang));
+                } else if (Keyboards.isAddFromFile(text)) {
+                    session.setFayldan(true);
+                    session.setQadam(1);
+                    sender.text(chatId, ru
+                            ? "📄 <b>Отправьте файл</b> (.xlsx, .csv или .txt)\n\n"
+                              + "Формат: 3 столбца — <b>Название, Цена, Количество</b>\n\n"
+                              + "Пример (CSV):\n<code>Парацетамол;12000;50\nБинт стерильный;8000;30</code>"
+                            : "📄 <b>Fayl yuboring</b> (.xlsx, .csv yoki .txt)\n\n"
+                              + "Format: 3 ta ustun — <b>Nomi, Narxi, Soni</b>\n\n"
+                              + "Misol (CSV):\n<code>Paratsetamol;12000;50\nBint steril;8000;30</code>",
+                            Keyboards.cancelMenu(lang));
+                } else {
+                    sender.text(chatId, ru ? "⬇️ Выберите способ из меню ниже."
+                            : "⬇️ Quyidagi menyudan usulni tanlang.", Keyboards.addMethodMenu(lang));
+                }
+            }
+            case 1 -> {
+                if (session.isFayldan()) {
+                    sender.text(chatId, ru ? "📄 Отправьте файл (.xlsx, .csv или .txt)."
+                            : "📄 Fayl yuboring (.xlsx, .csv yoki .txt).", Keyboards.cancelMenu(lang));
+                    return;
+                }
                 if (text.isBlank()) {
                     sender.text(chatId, Texts.t(lang, "sendText"), Keyboards.cancelMenu(lang));
                     return;
@@ -724,10 +780,10 @@ public class Router {
                     return;
                 }
                 session.setNomi(text);
-                session.setQadam(1);
+                session.setQadam(2);
                 sender.text(chatId, ru ? "💵 <b>Цена (сум):</b>" : "💵 <b>Narxi (so'm):</b>", Keyboards.cancelMenu(lang));
             }
-            case 1 -> {
+            case 2 -> {
                 Double narx = narxOqi(text);
                 if (narx == null) {
                     sender.text(chatId, ru ? "❌ Неверная цена. Введите число, например 12000."
@@ -735,13 +791,13 @@ public class Router {
                     return;
                 }
                 session.setNarx(narx);
-                session.setQadam(2);
+                session.setQadam(3);
                 sender.text(chatId, ru
                         ? "🔢 <b>Сколько штук есть сейчас?</b>\n\nЭто будет первым приходом. Если не ведёте учёт — «Пропустить»."
                         : "🔢 <b>Hozir nechta bor?</b>\n\nBu birinchi kirim bo'ladi. Hisob yuritmasangiz — «O'tkazib yuborish».",
                         Keyboards.skipCancelMenu(lang));
             }
-            case 2 -> {
+            case 3 -> {
                 Integer soni = Keyboards.isSkip(text) ? 0 : sonOqi(text);
                 if (soni == null) {
                     sender.text(chatId, ru ? "❌ Неверное количество. Введите целое число."
@@ -767,6 +823,131 @@ public class Router {
             }
             default -> sessions.remove(userId);
         }
+    }
+
+    private void fayldanImport(long chatId, long userId, String lang, Session session, String fileId) {
+        boolean ru = Texts.ru(lang);
+        byte[] data = sender.download(fileId);
+        if (data == null) {
+            sender.text(chatId, ru ? "❌ Не удалось загрузить файл. Попробуйте ещё раз."
+                    : "❌ Faylni yuklab bo'lmadi. Qaytadan urinib ko'ring.", Keyboards.cancelMenu(lang));
+            return;
+        }
+
+        List<String[]> rows;
+        try {
+            rows = faylniOqi(data);
+        } catch (Exception e) {
+            sender.text(chatId, ru ? "❌ Файл не распознан. Отправьте .txt, .csv или .xlsx файл."
+                    : "❌ Fayl tanilmadi. .txt, .csv yoki .xlsx fayl yuboring.", Keyboards.cancelMenu(lang));
+            return;
+        }
+
+        int added = 0, skipped = 0;
+        StringBuilder result = new StringBuilder();
+        for (String[] parts : rows) {
+            if (parts.length < 2) { skipped++; continue; }
+            String nomi = parts[0].trim();
+            if (nomi.isEmpty()) { skipped++; continue; }
+            String nomiLow = nomi.toLowerCase();
+            if (nomiLow.startsWith("nom") || nomiLow.startsWith("назв") || nomiLow.equals("name")) continue;
+            Double narx = narxOqi(parts[1].trim());
+            if (narx == null) { skipped++; continue; }
+            int soni = 0;
+            if (parts.length >= 3) {
+                Integer s = sonOqi(parts[2].trim());
+                if (s != null) soni = s;
+            }
+            if (drugs.nomiBoyicha(session.getDorixonaId(), nomi) != null) { skipped++; continue; }
+            Dori dori = new Dori();
+            dori.setNomi(nomi);
+            dori.setNarx(narx);
+            dori.setDorixonaId(session.getDorixonaId());
+            dori.setMavjud(true);
+            long doriId = drugs.add(dori);
+            if (soni > 0) stock.kirim(doriId, soni, "dorixona boti: fayldan import");
+            added++;
+            result.append("  ").append(added).append(". ").append(esc(nomi))
+                    .append(" — ").append(son(narx)).append(ru ? " сум" : " so'm");
+            if (soni > 0) result.append(" (").append(soni).append(ru ? " шт.)" : " ta)");
+            result.append('\n');
+        }
+        sessions.remove(userId);
+        if (added == 0) {
+            sender.text(chatId, ru
+                    ? "❌ Ни один товар не добавлен.\n\n"
+                      + (skipped > 0 ? "Пропущено строк: " + skipped + " (ошибка формата или дубликаты).\n\n" : "")
+                      + "Формат:\n<code>Название;Цена;Количество</code>"
+                    : "❌ Birorta ham mahsulot qo'shilmadi.\n\n"
+                      + (skipped > 0 ? "O'tkazilgan qatorlar: " + skipped + " (format xatosi yoki dublikat).\n\n" : "")
+                      + "Format:\n<code>Nomi;Narxi;Soni</code>",
+                    Keyboards.ownerMenu(lang));
+        } else {
+            sender.text(chatId, (ru ? "✅ <b>Добавлено товаров: " : "✅ <b>Qo'shilgan mahsulotlar: ") + added + "</b>"
+                    + (skipped > 0 ? (ru ? "\n⚠️ Пропущено: " : "\n⚠️ O'tkazildi: ") + skipped : "")
+                    + "\n\n" + result,
+                    Keyboards.ownerMenu(lang));
+        }
+    }
+
+    private List<String[]> faylniOqi(byte[] data) throws Exception {
+        // Excel (.xlsx/.xls) fayl yoki matnli fayl (.csv/.txt) ekanligini aniqlash
+        if (data.length >= 4 && data[0] == 0x50 && data[1] == 0x4B) {
+            // ZIP/XLSX format
+            return excelOqi(data);
+        }
+        if (data.length >= 8 && data[0] == (byte) 0xD0 && data[1] == (byte) 0xCF) {
+            // OLE2/XLS format
+            return excelOqi(data);
+        }
+        // Matnli fayl (CSV/TXT)
+        String content = new String(data, java.nio.charset.StandardCharsets.UTF_8);
+        String[] lines = content.split("\\r?\\n");
+        List<String[]> rows = new ArrayList<>();
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            rows.add(line.split("[;,\\t]"));
+        }
+        return rows;
+    }
+
+    private List<String[]> excelOqi(byte[] data) throws Exception {
+        List<String[]> rows = new ArrayList<>();
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(data))) {
+            Sheet sheet = wb.getSheetAt(0);
+            for (Row row : sheet) {
+                String[] cells = new String[Math.max(3, row.getLastCellNum())];
+                for (int i = 0; i < cells.length; i++) {
+                    Cell cell = row.getCell(i);
+                    cells[i] = cell == null ? "" : cellText(cell);
+                }
+                boolean empty = true;
+                for (String c : cells) if (c != null && !c.isBlank()) { empty = false; break; }
+                if (!empty) rows.add(cells);
+            }
+        }
+        return rows;
+    }
+
+    private String cellText(Cell cell) {
+        if (cell == null) return "";
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> {
+                double v = cell.getNumericCellValue();
+                yield v == Math.floor(v) ? String.valueOf((long) v) : String.valueOf(v);
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> {
+                try { yield String.valueOf(cell.getNumericCellValue()); }
+                catch (Exception e) {
+                    try { yield cell.getStringCellValue(); }
+                    catch (Exception e2) { yield ""; }
+                }
+            }
+            default -> "";
+        };
     }
 
     private void omborQadami(long chatId, long userId, String lang, Session session, String text) {
@@ -847,6 +1028,27 @@ public class Router {
         }
         if ("bron".equals(parts[0])) {
             return bronQarori(chatId, userId, lang, id, parts[1]);
+        }
+        if ("dori".equals(parts[0])) {
+            return doriAmali(chatId, userId, lang, id, parts[1]);
+        }
+        return null;
+    }
+
+    private String doriAmali(long chatId, long userId, String lang, long doriId, String amal) {
+        boolean ru = Texts.ru(lang);
+        if ("ochir".equals(amal)) {
+            Dorixona d = pharmacies.egasiBoyicha(userId);
+            if (d == null) return ru ? "Аптека не найдена" : "Dorixona topilmadi";
+            Dori dori = drugs.getById(doriId);
+            if (dori == null) return ru ? "Товар не найден" : "Mahsulot topilmadi";
+            if (drugs.ochir(doriId, d.getId())) {
+                sender.text(chatId, ru
+                        ? "🗑 «" + esc(dori.getNomi()) + "» удален."
+                        : "🗑 «" + esc(dori.getNomi()) + "» o'chirildi.");
+                return ru ? "Удалён" : "O'chirildi";
+            }
+            return ru ? "Не удалось удалить" : "O'chirib bo'lmadi";
         }
         return null;
     }

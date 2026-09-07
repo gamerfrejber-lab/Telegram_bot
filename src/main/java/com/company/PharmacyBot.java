@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 /** Dorixonalar boti: Telegram bilan bog'lanish qatlami. Butun mantiq Router ichida. */
@@ -64,6 +65,21 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
         message.setParseMode("HTML");
         message.disableWebPagePreview();
         if (keyboard != null) message.setReplyMarkup(keyboard);
+        try {
+            execute(message);
+        } catch (Exception e) {
+            System.out.println("Xabar yuborilmadi (chat " + chatId + "): " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void inlineText(long chatId, String html, InlineKeyboardMarkup markup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(Long.toString(chatId));
+        message.setText(html);
+        message.setParseMode("HTML");
+        message.disableWebPagePreview();
+        if (markup != null) message.setReplyMarkup(markup);
         try {
             execute(message);
         } catch (Exception e) {

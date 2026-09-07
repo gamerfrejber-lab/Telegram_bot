@@ -33,6 +33,7 @@ public class Session {
 
     private String litsenziyaFileId;
     private String tekshiruvKodi;
+    private boolean fayldan;
 
     public Session(Turi turi) {
         this.turi = turi;
@@ -79,4 +80,7 @@ public class Session {
 
     public String getTekshiruvKodi() { return tekshiruvKodi; }
     public void setTekshiruvKodi(String tekshiruvKodi) { this.tekshiruvKodi = tekshiruvKodi; }
+
+    public boolean isFayldan() { return fayldan; }
+    public void setFayldan(boolean fayldan) { this.fayldan = fayldan; }
 }
