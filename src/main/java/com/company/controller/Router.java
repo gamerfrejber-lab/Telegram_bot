@@ -305,7 +305,7 @@ public class Router {
             sessions.put(userId, session);
             sender.text(chatId, Texts.ru(lang)
                     ? "📦 <b>Название товара:</b>\n\nНапример: Парацетамол, Бинт стерильный"
-                    : "📦 <b>Mahsulot nomi:</b>\n\nMasalan: Paracetamol, Bint steril", Keyboards.cancelMenu(lang));
+                    : "📦 <b>Mahsulot nomi:</b>\n\nMasalan: Paratsetamol, Bint steril", Keyboards.cancelMenu(lang));
             return true;
         }
         if (Keyboards.isStockIn(text) || Keyboards.isStockOut(text)) {
