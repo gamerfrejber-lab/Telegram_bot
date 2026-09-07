@@ -13,7 +13,20 @@ public class Session {
         EGALIK_ARIZASI,
         MAHSULOT_QOSHISH,
         KIRIM,
-        CHIQIM
+        CHIQIM,
+        ADMIN_DORI_QIDIRISH,
+        ADMIN_DORI_QOSHISH,
+        ADMIN_DORIXONA_OCHIRISH,
+        ADMIN_DORI_OCHIRISH,
+        ADMIN_KIRIM,
+        ADMIN_CHIQIM,
+        ADMIN_NARX_TAHRIRLASH,
+        ADMIN_OMBOR_HISOBOTI,
+        ADMIN_OBUNA_UZAYTIRISH,
+        ADMIN_LOKATSIYA,
+        ADMIN_DORI_YANGILASH,
+        EGA_NARX_TAHRIRLASH,
+        ADMIN_API_QOLDA
     }
 
     private final Turi turi;

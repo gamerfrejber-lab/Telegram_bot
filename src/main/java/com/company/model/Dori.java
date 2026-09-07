@@ -12,6 +12,7 @@ public class Dori {
     private long dorixonaId;
     private int qoldiq;
     private int kelgan;
+    private String dorixonaNomi;
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -44,6 +45,9 @@ public class Dori {
      * Ombor hisobi yuritilyaptimi. Hech qanday kirim yozilmagan bo'lsa qoldiq 0 chiqadi,
      * lekin bu "tugagan" degani emas — shunchaki hisob yuritilmagan.
      */
+    public String getDorixonaNomi() { return dorixonaNomi; }
+    public void setDorixonaNomi(String dorixonaNomi) { this.dorixonaNomi = dorixonaNomi; }
+
     public boolean hisobYuritiladi() { return kelgan > 0; }
 
     @Override

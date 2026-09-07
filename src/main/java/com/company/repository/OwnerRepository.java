@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Botdan foydalanuvchilar (dorixona egalari): ism, username, telefon va til tanlovi. */
 public class OwnerRepository {
@@ -66,6 +68,28 @@ public class OwnerRepository {
             System.out.println("Tilni o'qib bo'lmadi: " + e.getMessage());
         }
         return "uz";
+    }
+
+    public List<String[]> barchasi(int limit) {
+        String sql = "SELECT telegram_id, ism, username, telefon FROM dorixona_foydalanuvchi ORDER BY sana DESC LIMIT ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<String[]> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(new String[]{
+                            String.valueOf(rs.getLong("telegram_id")),
+                            rs.getString("ism"),
+                            rs.getString("username"),
+                            rs.getString("telefon")
+                    });
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Foydalanuvchilarni o'qib bo'lmadi", e);
+        }
     }
 
     public int soni() {
