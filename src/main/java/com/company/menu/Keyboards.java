@@ -88,8 +88,19 @@ public final class Keyboards {
     }
 
     public static ReplyKeyboard adminMenu(String lang) {
+        return adminMenu(lang, false);
+    }
+
+    /** Admin menyusi. Admin o'zi ham dorixona egasi bo'lsa, kabinet tugmalari ham qo'shiladi. */
+    public static ReplyKeyboard adminMenu(String lang, boolean egasi) {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
+        if (egasi) {
+            rows.add(row(products(lang), brons(lang)));
+            rows.add(row(addProduct(lang), report(lang)));
+            rows.add(row(stockIn(lang), stockOut(lang)));
+            rows.add(row(subscription(lang)));
+        }
         rows.add(row(adminAddPharmacy(lang), adminPharmacies(lang)));
         rows.add(row(adminClaims(lang), adminOrders(lang)));
         rows.add(row(adminStats(lang), help(lang)));
@@ -150,13 +161,6 @@ public final class Keyboards {
         };
     }
 
-    public static ReplyKeyboard listMenu(String lang, List<String> items) {
-        List<KeyboardRow> rows = new ArrayList<>();
-        for (String item : items) rows.add(row(item));
-        rows.add(row(cancel(lang)));
-        return markup(rows);
-    }
-
     public static ReplyKeyboard pharmacyMenu(String lang, List<Dorixona> pharmacies) {
         List<KeyboardRow> rows = new ArrayList<>();
         for (Dorixona pharmacy : pharmacies) rows.add(row(pharmacy.getNomi()));
@@ -165,6 +169,47 @@ public final class Keyboards {
     }
 
     // ——— Inline tugmalar ———
+
+    /** O'chirishni tasdiqlash: ha / yo'q. */
+    public static InlineKeyboardMarkup confirmDelete(String yesData, String noData, String lang) {
+        boolean ru = isRu(lang);
+        InlineKeyboardButton yes = new InlineKeyboardButton(ru ? "✅ Да, удалить" : "✅ Ha, o'chirish");
+        yes.setCallbackData(yesData);
+        InlineKeyboardButton no = new InlineKeyboardButton(ru ? "❌ Нет" : "❌ Yo'q");
+        no.setCallbackData(noData);
+        return inline(List.of(List.of(yes, no)));
+    }
+
+    /**
+     * Inline ro'yxat: har bir element alohida tugma, pastda sahifalash (◀️ 1/5 ▶️).
+     * Oddiy klaviaturadan farqli o'laroq yuzlab mahsulot bo'lsa ham Telegram uni rad etmaydi.
+     * items — {tugma matni, callback} juftliklari; navPrefix + sahifa raqami sahifani almashtiradi.
+     */
+    public static InlineKeyboardMarkup inlineList(List<String[]> items, int page, int pages, String navPrefix) {
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        for (String[] item : items) rows.add(List.of(button(item[0], item[1])));
+        if (pages > 1) {
+            rows.add(List.of(
+                    button(page > 0 ? "◀️" : "·", page > 0 ? navPrefix + (page - 1) : "noop:x:0"),
+                    button((page + 1) + " / " + pages, "noop:x:0"),
+                    button(page < pages - 1 ? "▶️" : "·", page < pages - 1 ? navPrefix + (page + 1) : "noop:x:0")));
+        }
+        return inline(rows);
+    }
+
+    /** Mahsulot kartasi tugmalari: o'chirish va ro'yxatga qaytish. */
+    public static InlineKeyboardMarkup productCard(long doriId, int page, String lang) {
+        boolean ru = isRu(lang);
+        return inline(List.of(
+                List.of(button(ru ? "🗑 Удалить" : "🗑 O'chirish", "dori:ochir:" + doriId + ":" + page)),
+                List.of(button(ru ? "⬅️ К списку" : "⬅️ Ro'yxatga", "dori:sahifa:" + page))));
+    }
+
+    private static InlineKeyboardButton button(String text, String data) {
+        InlineKeyboardButton b = new InlineKeyboardButton(text);
+        b.setCallbackData(data);
+        return b;
+    }
 
     /** Admin uchun dorixona boshqaruvi: obuna uzaytirish va o'chirish. */
     public static InlineKeyboardMarkup pharmacyActions(long dorixonaId, String lang) {
@@ -177,39 +222,24 @@ public final class Keyboards {
     }
 
     /** Admin uchun ariza qarori: tasdiqlash yoki rad etish. */
-    public static InlineKeyboardMarkup claimDecision(long soovId) {
-        InlineKeyboardButton ok = new InlineKeyboardButton("✅ Tasdiqlash");
-        ok.setCallbackData("soov:ok:" + soovId);
-        InlineKeyboardButton no = new InlineKeyboardButton("❌ Rad etish");
-        no.setCallbackData("soov:no:" + soovId);
-        return inline(List.of(List.of(ok, no)));
+    public static InlineKeyboardMarkup claimDecision(long soovId, String lang) {
+        boolean ru = isRu(lang);
+        return inline(List.of(List.of(
+                button(ru ? "✅ Одобрить" : "✅ Tasdiqlash", "soov:ok:" + soovId),
+                button(ru ? "❌ Отклонить" : "❌ Rad etish", "soov:no:" + soovId))));
     }
 
     /** Dorixona egasi uchun bron qarori. */
-    public static InlineKeyboardMarkup bronActions(long bronId, boolean tayyorlangan) {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        if (!tayyorlangan) {
-            InlineKeyboardButton ok = new InlineKeyboardButton("✅ Tayyorladim");
-            ok.setCallbackData("bron:tayyor:" + bronId);
-            InlineKeyboardButton no = new InlineKeyboardButton("❌ Yo'q / bekor");
-            no.setCallbackData("bron:bekor:" + bronId);
-            rows.add(List.of(ok, no));
-        } else {
-            InlineKeyboardButton given = new InlineKeyboardButton("📦 Berildi");
-            given.setCallbackData("bron:berildi:" + bronId);
-            InlineKeyboardButton no = new InlineKeyboardButton("❌ Bekor");
-            no.setCallbackData("bron:bekor:" + bronId);
-            rows.add(List.of(given, no));
-        }
-        return inline(rows);
-    }
-
-    /** Mahsulot uchun: narx o'zgartirish va o'chirish. */
-    public static InlineKeyboardMarkup productActions(long doriId, String lang) {
+    public static InlineKeyboardMarkup bronActions(long bronId, boolean tayyorlangan, String lang) {
         boolean ru = isRu(lang);
-        InlineKeyboardButton ochir = new InlineKeyboardButton(ru ? "🗑 Удалить" : "🗑 O'chirish");
-        ochir.setCallbackData("dori:ochir:" + doriId);
-        return inline(List.of(List.of(ochir)));
+        if (!tayyorlangan) {
+            return inline(List.of(List.of(
+                    button(ru ? "✅ Подготовил" : "✅ Tayyorladim", "bron:tayyor:" + bronId),
+                    button(ru ? "❌ Нет / отмена" : "❌ Yo'q / bekor", "bron:bekor:" + bronId))));
+        }
+        return inline(List.of(List.of(
+                button(ru ? "📦 Выдано" : "📦 Berildi", "bron:berildi:" + bronId),
+                button(ru ? "❌ Отмена" : "❌ Bekor", "bron:bekor:" + bronId))));
     }
 
     private static InlineKeyboardMarkup inline(List<List<InlineKeyboardButton>> rows) {

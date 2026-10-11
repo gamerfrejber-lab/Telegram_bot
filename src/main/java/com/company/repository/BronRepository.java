@@ -25,11 +25,16 @@ public class BronRepository {
             + "p.nomi AS dorixona_nomi "
             + "FROM bron b JOIN dori d ON d.id = b.dori_id JOIN dorixona p ON p.id = b.dorixona_id";
 
-    /** Dorixona egasiga hali yetkazilmagan yangi bronlar. */
+    /**
+     * Dorixona egasiga hali yetkazilmagan yangi bronlar. Egasi hali ulanmagan dorixonaning
+     * bronlari bu yerga kirmaydi: ular "yetkazildi" deb belgilanmay kutib turadi va egasi
+     * ulangach yuboriladi (avval belgilab qo'yilib, butunlay yo'qolib ketardi).
+     */
     public List<Bron> yetkazilmaganlar() {
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
-                     SELECT + " WHERE b.egaga_xabar = FALSE ORDER BY b.id LIMIT 20")) {
+                     SELECT + " WHERE b.egaga_xabar = FALSE AND p.egasi_telegram_id IS NOT NULL"
+                     + " ORDER BY b.id LIMIT 20")) {
             return read(stmt);
         } catch (SQLException e) {
             throw new IllegalStateException("Bronlarni o'qib bo'lmadi", e);
@@ -92,9 +97,21 @@ public class BronRepository {
      * Bron holatini o'zgartiradi. Mijozga xabar berish uchun mijozga_xabar bayrog'i
      * tushiriladi — mijozlar boti buni ko'rib, mijozga o'zgarishni aytadi.
      * Faqat shu dorixonaning broni o'zgaradi (birovnikiga tegib bo'lmaydi).
+     *
+     * Faqat ruxsat etilgan o'tishlar bajariladi (YANGI → TAYYOR → BERILDI, bekor qilish
+     * faqat berilmagan bronda). Eski xabardagi tugma qayta bosilsa false qaytadi — shuning
+     * uchun "Berildi" ikki marta bosilib, ombordan ikki marta chiqim yozilmaydi.
      */
     public boolean holatniOzgartir(long bronId, long dorixonaId, String yangiHolat) {
-        String sql = "UPDATE bron SET holat = ?, mijozga_xabar = FALSE WHERE id = ? AND dorixona_id = ?";
+        String oldingi = switch (yangiHolat) {
+            case Bron.TAYYOR -> "'" + Bron.YANGI + "'";
+            case Bron.BERILDI -> "'" + Bron.TAYYOR + "'";
+            case Bron.BEKOR -> "'" + Bron.YANGI + "', '" + Bron.TAYYOR + "'";
+            default -> null;
+        };
+        if (oldingi == null) return false;
+        String sql = "UPDATE bron SET holat = ?, mijozga_xabar = FALSE "
+                + "WHERE id = ? AND dorixona_id = ? AND holat IN (" + oldingi + ")";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, yangiHolat);

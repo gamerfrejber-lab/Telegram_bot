@@ -123,11 +123,52 @@ public class PharmacyRepository {
         }
     }
 
-    public boolean ochir(long id) {
+    /** Biriktirishni bekor qiladi — faqat hali shu egaga biriktirilgan bo'lsa. */
+    public void egasiniBoshat(long dorixonaId, long telegramId) {
         try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("DELETE FROM dorixona WHERE id = ?")) {
-            stmt.setLong(1, id);
-            return stmt.executeUpdate() > 0;
+             PreparedStatement stmt = conn.prepareStatement(
+                     "UPDATE dorixona SET egasi_telegram_id = NULL WHERE id = ? AND egasi_telegram_id = ?")) {
+            stmt.setLong(1, dorixonaId);
+            stmt.setLong(2, telegramId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Egani bo'shatib bo'lmadi", e);
+        }
+    }
+
+    /**
+     * Dorixonani unga bog'liq hamma narsa bilan birga o'chiradi. Bog'liq yozuvlar qo'lda
+     * o'chiriladi: jadvallarni veb-sayt yaratgan bo'lsa ON DELETE CASCADE bo'lmasligi mumkin.
+     */
+    public boolean ochir(long id) {
+        String[] sqls = {
+                "DELETE FROM ombor_harakat WHERE dori_id IN (SELECT id FROM dori WHERE dorixona_id = ?)",
+                "DELETE FROM bron WHERE dorixona_id = ?",
+                "DELETE FROM dorixona_soov WHERE dorixona_id = ?",
+                "DELETE FROM dori WHERE dorixona_id = ?",
+        };
+        try (Connection conn = Database.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                for (String sql : sqls) {
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setLong(1, id);
+                        stmt.executeUpdate();
+                    }
+                }
+                int removed;
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM dorixona WHERE id = ?")) {
+                    stmt.setLong(1, id);
+                    removed = stmt.executeUpdate();
+                }
+                conn.commit();
+                return removed > 0;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Dorixonani o'chirib bo'lmadi", e);
         }

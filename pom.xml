@@ -28,6 +28,13 @@
             <version>42.7.4</version>
         </dependency>
 
+        <!-- Ulanishlar puli: har bir so'rovda bazaga qaytadan ulanmaslik uchun. -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
         <!-- Excel (.xlsx) fayllarini o'qish uchun -->
         <dependency>
             <groupId>org.apache.poi</groupId>
