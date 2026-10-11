@@ -1,9 +1,10 @@
 package com.company.db;
 
 import com.company.config.Config;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -15,11 +16,37 @@ import java.sql.Statement;
  */
 public final class Database {
 
+    private static volatile HikariDataSource pool;
+
     private Database() { }
 
+    /**
+     * Puldan ulanish beradi. Avval har bir so'rov uchun yangi ulanish ochilardi — bitta xabarga
+     * javob berishda bazaga 4-6 marta qayta ulanish kerak bo'lib, masofadagi Postgres bilan
+     * bot sezilarli sekin ishlardi. close() ulanishni yopmaydi, pulga qaytaradi.
+     */
     public static Connection getConnection() throws SQLException {
-        String url = Config.require("DB_URL");
-        return DriverManager.getConnection(url, Config.get("DB_USER", null), Config.get("DB_PASSWORD", null));
+        HikariDataSource ds = pool;
+        if (ds == null) {
+            synchronized (Database.class) {
+                ds = pool;
+                if (ds == null) {
+                    HikariConfig config = new HikariConfig();
+                    config.setJdbcUrl(Config.require("DB_URL"));
+                    String user = Config.get("DB_USER", null);
+                    String password = Config.get("DB_PASSWORD", null);
+                    if (user != null) config.setUsername(user);
+                    if (password != null) config.setPassword(password);
+                    // Bepul Postgres tariflarida ulanishlar soni cheklangan, bot uchun bir nechtasi yetadi.
+                    config.setMaximumPoolSize(Integer.parseInt(Config.get("DB_POOL_SIZE", "4")));
+                    config.setMinimumIdle(1);
+                    config.setPoolName("dorixona-bot");
+                    ds = new HikariDataSource(config);
+                    pool = ds;
+                }
+            }
+        }
+        return ds.getConnection();
     }
 
     /**

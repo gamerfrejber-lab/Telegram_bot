@@ -15,6 +15,12 @@ public interface Sender {
 
     void inlineText(long chatId, String html, InlineKeyboardMarkup markup);
 
+    /**
+     * Inline tugmali xabarni joyida yangilaydi (sahifalash, kartani ochish). Xabar juda eski
+     * bo'lsa yoki tahrirlab bo'lmasa, yangi xabar yuboriladi.
+     */
+    void editInline(long chatId, int messageId, String html, InlineKeyboardMarkup markup);
+
     /** Rasm yuboradi (file_id orqali — rasm Telegram serverida allaqachon bor). */
     void photo(long chatId, String fileId, String caption, ReplyKeyboard keyboard);
 

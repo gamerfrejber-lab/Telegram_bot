@@ -42,16 +42,18 @@ public class StockRepository {
      */
     public int chiqim(long doriId, int soni, String izoh) {
         if (soni <= 0) return 0;
-        String sql = "INSERT INTO ombor_harakat (dori_id, turi, soni, izoh, sana) "
-                + "SELECT ?, ?, ?, ?, NOW() WHERE " + QOLDIQ_EXPR + " >= ?";
+        // Sotuv paytidagi narx yoziladi: keyin narx o'zgarsa ham hisobotdagi tushum to'g'ri qoladi.
+        String sql = "INSERT INTO ombor_harakat (dori_id, turi, soni, narx, izoh, sana) "
+                + "SELECT ?, ?, ?, (SELECT narx FROM dori WHERE id = ?), ?, NOW() WHERE " + QOLDIQ_EXPR + " >= ?";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, doriId);
             stmt.setString(2, CHIQIM);
             stmt.setInt(3, soni);
-            stmt.setString(4, izoh);
-            stmt.setLong(5, doriId);
-            stmt.setInt(6, soni);
+            stmt.setLong(4, doriId);
+            stmt.setString(5, izoh);
+            stmt.setLong(6, doriId);
+            stmt.setInt(7, soni);
             return stmt.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Chiqimni yozib bo'lmadi", e);

@@ -12,12 +12,16 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Egalik arizalari: yuborish, ko'rish, tasdiqlash va rad etish. */
+/**
+ * Egalik arizalari: yuborish, ko'rish, tasdiqlash va rad etish.
+ * Dalil suratlarining baytlari (BYTEA) faqat yoziladi — bu bot ularni file_id orqali
+ * ko'rsatadi, shuning uchun o'qishda og'ir ustunlar tortilmaydi.
+ */
 public class SoovRepository {
 
     private static final String SELECT =
             "SELECT s.id, s.dorixona_id, s.telegram_id, s.ism, s.username, s.telefon, "
-            + "s.litsenziya_file_id, s.jonli_rasm_file_id, s.litsenziya_rasm, s.jonli_rasm, "
+            + "s.litsenziya_file_id, s.jonli_rasm_file_id, "
             + "s.tekshiruv_kodi, s.holat, s.admin_izoh, s.sana, "
             + "p.nomi AS dorixona_nomi "
             + "FROM dorixona_soov s JOIN dorixona p ON p.id = s.dorixona_id";
@@ -59,6 +63,21 @@ public class SoovRepository {
     public Soov kutilayotgani(long telegramId) {
         return bitta(SELECT + " WHERE s.telegram_id = ? AND s.holat = '" + Soov.KUTILMOQDA + "' "
                 + "ORDER BY s.id DESC LIMIT 1", telegramId);
+    }
+
+    /**
+     * Ko'rib chiqilmagan arizalar soni. Ro'yxatni o'qib sanash o'rniga alohida so'rov:
+     * aks holda faqat son uchun hamma arizalar bazadan tortilardi.
+     */
+    public int kutilayotganlarSoni() {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT COUNT(*) FROM dorixona_soov WHERE holat = '" + Soov.KUTILMOQDA + "'");
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Arizalar sonini o'qib bo'lmadi", e);
+        }
     }
 
     public List<Soov> kutilayotganlar() {
@@ -144,8 +163,6 @@ public class SoovRepository {
                 s.setTelefon(rs.getString("telefon"));
                 s.setLitsenziyaFileId(rs.getString("litsenziya_file_id"));
                 s.setJonliRasmFileId(rs.getString("jonli_rasm_file_id"));
-                s.setLitsenziyaRasm(rs.getBytes("litsenziya_rasm"));
-                s.setJonliRasm(rs.getBytes("jonli_rasm"));
                 s.setTekshiruvKodi(rs.getString("tekshiruv_kodi"));
                 s.setHolat(rs.getString("holat"));
                 s.setAdminIzoh(rs.getString("admin_izoh"));

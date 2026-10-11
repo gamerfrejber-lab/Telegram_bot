@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -37,10 +38,17 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
     public void onUpdateReceived(Update update) {
         try {
             if (update.hasCallbackQuery()) {
-                String javob = router.handleCallback(update.getCallbackQuery());
+                String javob;
+                try {
+                    javob = router.handleCallback(update.getCallbackQuery());
+                } catch (Exception e) {
+                    // Xato bo'lsa ham tugmaga javob beramiz — aks holda u "yuklanmoqda"da qotib qoladi.
+                    e.printStackTrace();
+                    javob = "⚠️ Xatolik yuz berdi, qaytadan urinib ko'ring.";
+                }
                 AnswerCallbackQuery answer = new AnswerCallbackQuery();
                 answer.setCallbackQueryId(update.getCallbackQuery().getId());
-                if (javob != null && !javob.isBlank()) answer.setText(javob);
+                if (javob != null && !javob.isBlank()) answer.setText(javob.length() > 190 ? javob.substring(0, 190) : javob);
                 execute(answer);
                 return;
             }
@@ -84,6 +92,24 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
             execute(message);
         } catch (Exception e) {
             System.out.println("Xabar yuborilmadi (chat " + chatId + "): " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void editInline(long chatId, int messageId, String html, InlineKeyboardMarkup markup) {
+        EditMessageText edit = new EditMessageText();
+        edit.setChatId(Long.toString(chatId));
+        edit.setMessageId(messageId);
+        edit.setText(html);
+        edit.setParseMode("HTML");
+        edit.disableWebPagePreview();
+        if (markup != null) edit.setReplyMarkup(markup);
+        try {
+            execute(edit);
+        } catch (Exception e) {
+            // Matn o'zgarmagan bo'lsa Telegram xato qaytaradi — bu holda hech narsa qilmaymiz.
+            if (String.valueOf(e.getMessage()).contains("not modified")) return;
+            inlineText(chatId, html, markup);
         }
     }
 

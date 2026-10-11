@@ -28,7 +28,7 @@ public class DrugRepository {
 
     public List<Dori> dorixonaniki(long dorixonaId) {
         try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SELECT + " WHERE d.dorixona_id = ? ORDER BY d.nomi")) {
+             PreparedStatement stmt = conn.prepareStatement(SELECT + " WHERE d.dorixona_id = ? ORDER BY LOWER(d.nomi)")) {
             stmt.setLong(1, dorixonaId);
             return read(stmt);
         } catch (SQLException e) {
@@ -97,16 +97,65 @@ public class DrugRepository {
         }
     }
 
-    /** O'chiradi — faqat shu dorixonaga tegishli bo'lsa (birovnikini o'chirib bo'lmaydi). */
+    /**
+     * O'chiradi — faqat shu dorixonaga tegishli bo'lsa (birovnikini o'chirib bo'lmaydi).
+     *
+     * Ombor harakatlari va bronlar avval qo'lda o'chiriladi: jadvallarni veb-sayt
+     * (Hibernate) yaratgan bo'lsa, ulardagi bog'lanish ON DELETE CASCADE'siz bo'ladi va
+     * kirim yozilgan mahsulotni (masalan fayldan import qilinganini) o'chirib bo'lmay qolardi.
+     */
     public boolean ochir(long doriId, long dorixonaId) {
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "DELETE FROM dori WHERE id = ? AND dorixona_id = ?")) {
-            stmt.setLong(1, doriId);
-            stmt.setLong(2, dorixonaId);
-            return stmt.executeUpdate() > 0;
+        try (Connection conn = Database.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement check = conn.prepareStatement(
+                        "SELECT 1 FROM dori WHERE id = ? AND dorixona_id = ?")) {
+                    check.setLong(1, doriId);
+                    check.setLong(2, dorixonaId);
+                    try (ResultSet rs = check.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+                }
+                for (String dep : new String[]{"ombor_harakat", "bron"}) {
+                    try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + dep + " WHERE dori_id = ?")) {
+                        stmt.setLong(1, doriId);
+                        stmt.executeUpdate();
+                    }
+                }
+                int removed;
+                try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM dori WHERE id = ? AND dorixona_id = ?")) {
+                    stmt.setLong(1, doriId);
+                    stmt.setLong(2, dorixonaId);
+                    removed = stmt.executeUpdate();
+                }
+                conn.commit();
+                return removed > 0;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Mahsulotni o'chirib bo'lmadi", e);
+        }
+    }
+
+    /** Dorixonadagi mavjud nomlar (kichik harfda) — fayldan importda dublikatni aniqlash uchun. */
+    public java.util.Set<String> nomlar(long dorixonaId) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT LOWER(nomi) FROM dori WHERE dorixona_id = ?")) {
+            stmt.setLong(1, dorixonaId);
+            java.util.Set<String> result = new java.util.HashSet<>();
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) if (rs.getString(1) != null) result.add(rs.getString(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Mahsulot nomlarini o'qib bo'lmadi", e);
         }
     }
 
