@@ -169,7 +169,7 @@ public class Router {
     }
 
     private boolean menyuTugmasiBosildi(String text, long userId) {
-        if (Keyboards.isProducts(text) || Keyboards.isAddProduct(text)
+        if (Keyboards.isProducts(text) || Keyboards.isAddProduct(text) || Keyboards.isDeleteProduct(text)
                 || Keyboards.isStockIn(text) || Keyboards.isStockOut(text)
                 || Keyboards.isBrons(text) || Keyboards.isReport(text)
                 || Keyboards.isSubscription(text) || Keyboards.isClaim(text)) return true;
@@ -319,7 +319,7 @@ public class Router {
         Dorixona meniki = pharmacies.egasiBoyicha(userId);
         if (meniki == null) return false;
 
-        boolean kabinetTugmasi = Keyboards.isProducts(text) || Keyboards.isAddProduct(text)
+        boolean kabinetTugmasi = Keyboards.isProducts(text) || Keyboards.isAddProduct(text) || Keyboards.isDeleteProduct(text)
                 || Keyboards.isStockIn(text) || Keyboards.isStockOut(text)
                 || Keyboards.isBrons(text) || Keyboards.isReport(text) || Keyboards.isSubscription(text);
         if (!kabinetTugmasi) return false;
@@ -332,6 +332,17 @@ public class Router {
 
         if (Keyboards.isProducts(text)) {
             mahsulotlar(chatId, meniki, lang);
+            return true;
+        }
+        if (Keyboards.isDeleteProduct(text)) {
+            if (drugs.dorixonaniki(meniki.getId()).isEmpty()) {
+                sender.text(chatId, Texts.ru(lang) ? "📦 Товаров пока нет." : "📦 Hali mahsulot yo'q.", egaMenyusi(chatId, lang));
+                return true;
+            }
+            Session session = new Session(Session.Turi.OCHIRISH);
+            session.setDorixonaId(meniki.getId());
+            sessions.put(userId, session);
+            ochirishRoyxati(chatId, lang, session, null);
             return true;
         }
         if (Keyboards.isAddProduct(text)) {
@@ -686,6 +697,7 @@ public class Router {
             case OBUNANI_UZAYTIRISH -> obunaUzaytirishQadami(chatId, userId, lang, session, text);
             case MAHSULOT_QOSHISH -> mahsulotQoshishQadami(chatId, userId, lang, session, text);
             case KIRIM, CHIQIM -> omborQadami(chatId, userId, lang, session, text);
+            case OCHIRISH -> ochirishQadami(chatId, userId, lang, session, text);
         }
     }
 
@@ -1031,6 +1043,91 @@ public class Router {
             return;
         }
         omborSoni(chatId, userId, lang, session, text);
+    }
+
+    // ————————————————— Mahsulot o'chirish (pastki klaviatura) —————————————————
+
+    private static final int OCHIRISH_SAHIFA = 30;
+
+    private void ochirishQadami(long chatId, long userId, String lang, Session session, String text) {
+        boolean ru = Texts.ru(lang);
+        if (session.getQadam() == 1) {
+            if (Keyboards.isYesDelete(text)) {
+                boolean ochdi = drugs.ochir(session.getDoriId(), session.getDorixonaId());
+                session.setQadam(0);
+                String natija = ochdi
+                        ? (ru ? "🗑 «" + esc(session.getDoriNomi()) + "» удалён." : "🗑 «" + esc(session.getDoriNomi()) + "» o'chirildi.")
+                        : (ru ? "❌ Не удалось удалить (возможно, уже удалён)." : "❌ O'chirib bo'lmadi (balki allaqachon o'chirilgan).");
+                if (drugs.dorixonaniki(session.getDorixonaId()).isEmpty()) {
+                    sessions.remove(userId);
+                    sender.text(chatId, natija + "\n\n" + (ru ? "📦 Товаров больше нет." : "📦 Boshqa mahsulot qolmadi."), egaMenyusi(chatId, lang));
+                    return;
+                }
+                ochirishRoyxati(chatId, lang, session, natija);
+                return;
+            }
+            session.setQadam(0);
+            ochirishRoyxati(chatId, lang, session, Keyboards.isNo(text) ? Texts.t(lang, "cancelled") : null);
+            return;
+        }
+
+        if (Keyboards.isNextPage(text)) { session.setSahifa(session.getSahifa() + 1); ochirishRoyxati(chatId, lang, session, null); return; }
+        if (Keyboards.isPrevPage(text)) { session.setSahifa(session.getSahifa() - 1); ochirishRoyxati(chatId, lang, session, null); return; }
+        if (Keyboards.isPageLabel(text) || text.isBlank()) { ochirishRoyxati(chatId, lang, session, null); return; }
+        if (Keyboards.isShowAll(text)) {
+            session.setFilter(null);
+            session.setSahifa(0);
+            ochirishRoyxati(chatId, lang, session, null);
+            return;
+        }
+
+        Dori dori = drugs.nomiBoyicha(session.getDorixonaId(), text);
+        if (dori != null) {
+            session.setDoriId(dori.getId());
+            session.setDoriNomi(dori.getNomi());
+            session.setQadam(1);
+            sender.text(chatId, (ru ? "🗑 <b>Удалить товар?</b>\n\n" : "🗑 <b>Mahsulotni o'chirasizmi?</b>\n\n")
+                            + mahsulotKartasi(dori, ru) + "\n\n"
+                            + (ru ? "⚠️ Его складские записи и брони тоже удалятся."
+                                  : "⚠️ Uning ombor yozuvlari va bronlari ham o'chadi."),
+                    Keyboards.confirmDeleteMenu(lang));
+            return;
+        }
+
+        // Nomi to'liq mos kelmasa — qidiruv.
+        String q = text.toLowerCase();
+        boolean bor = drugs.dorixonaniki(session.getDorixonaId()).stream()
+                .anyMatch(d -> d.getNomi() != null && d.getNomi().toLowerCase().contains(q));
+        if (!bor) {
+            ochirishRoyxati(chatId, lang, session, ru ? "🔎 По запросу «<b>" + esc(text) + "</b>» ничего не найдено."
+                                                      : "🔎 «<b>" + esc(text) + "</b>» bo'yicha hech narsa topilmadi.");
+            return;
+        }
+        session.setFilter(text);
+        session.setSahifa(0);
+        ochirishRoyxati(chatId, lang, session, null);
+    }
+
+    /** O'chirish uchun mahsulotlar — pastki klaviaturada, har biri alohida tugma, sahifalab. */
+    private void ochirishRoyxati(long chatId, String lang, Session session, String oldMatn) {
+        boolean ru = Texts.ru(lang);
+        String f = session.getFilter() == null ? null : session.getFilter().toLowerCase();
+        List<String> nomlar = drugs.dorixonaniki(session.getDorixonaId()).stream()
+                .map(Dori::getNomi)
+                .filter(n -> n != null && (f == null || n.toLowerCase().contains(f)))
+                .toList();
+        int pages = Math.max(1, (nomlar.size() + OCHIRISH_SAHIFA - 1) / OCHIRISH_SAHIFA);
+        int page = Math.max(0, Math.min(session.getSahifa(), pages - 1));
+        session.setSahifa(page);
+        List<String> sahifa = nomlar.subList(page * OCHIRISH_SAHIFA, Math.min(nomlar.size(), (page + 1) * OCHIRISH_SAHIFA));
+        String matn = (oldMatn == null ? "" : oldMatn + "\n\n")
+                + (session.getFilter() == null
+                    ? (ru ? "🗑 <b>Удаление товара</b>\n\nВсего: <b>" : "🗑 <b>Mahsulot o'chirish</b>\n\nJami: <b>") + nomlar.size() + (ru ? "</b> шт." : "</b> ta")
+                    : "🔎 «<b>" + esc(session.getFilter()) + "</b>» — " + nomlar.size() + (ru ? " шт." : " ta"))
+                + (pages > 1 ? (ru ? "  ·  стр. " : "  ·  ") + (page + 1) + "/" + pages + (ru ? "" : "-sahifa") : "")
+                + "\n\n" + (ru ? "👇 Выберите товар кнопкой ниже или напишите название — я найду."
+                               : "👇 Pastdagi tugmalardan mahsulotni tanlang yoki nomini yozing — qidirib beraman.");
+        sender.text(chatId, matn, Keyboards.pagedMenu(lang, sahifa, page, pages, session.getFilter() != null));
     }
 
     /** Kirim/chiqim uchun mahsulot tanlov tugmalari (sahifali). */

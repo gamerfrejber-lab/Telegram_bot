@@ -13,7 +13,8 @@ public class Session {
         EGALIK_ARIZASI,
         MAHSULOT_QOSHISH,
         KIRIM,
-        CHIQIM
+        CHIQIM,
+        OCHIRISH
     }
 
     private final Turi turi;
@@ -34,6 +35,8 @@ public class Session {
     private String litsenziyaFileId;
     private String tekshiruvKodi;
     private boolean fayldan;
+    private int sahifa;
+    private String filter;
 
     public Session(Turi turi) {
         this.turi = turi;
@@ -80,6 +83,12 @@ public class Session {
 
     public String getTekshiruvKodi() { return tekshiruvKodi; }
     public void setTekshiruvKodi(String tekshiruvKodi) { this.tekshiruvKodi = tekshiruvKodi; }
+
+    public int getSahifa() { return sahifa; }
+    public void setSahifa(int sahifa) { this.sahifa = sahifa; }
+
+    public String getFilter() { return filter; }
+    public void setFilter(String filter) { this.filter = filter; }
 
     public boolean isFayldan() { return fayldan; }
     public void setFayldan(boolean fayldan) { this.fayldan = fayldan; }

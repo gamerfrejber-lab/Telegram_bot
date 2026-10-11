@@ -34,6 +34,18 @@ public final class Keyboards {
     public static final String PRODUCTS_RU = "📦 Мои товары";
     public static final String ADD_PRODUCT_UZ = "➕ Mahsulot qo'shish";
     public static final String ADD_PRODUCT_RU = "➕ Добавить товар";
+    public static final String DELETE_PRODUCT_UZ = "🗑 Mahsulot o'chirish";
+    public static final String DELETE_PRODUCT_RU = "🗑 Удалить товар";
+    public static final String PREV_UZ = "◀️ Oldingi";
+    public static final String PREV_RU = "◀️ Предыдущая";
+    public static final String NEXT_UZ = "Keyingi ▶️";
+    public static final String NEXT_RU = "Далее ▶️";
+    public static final String ALL_UZ = "📋 Barcha mahsulotlar";
+    public static final String ALL_RU = "📋 Все товары";
+    public static final String YES_DELETE_UZ = "✅ Ha, o'chirish";
+    public static final String YES_DELETE_RU = "✅ Да, удалить";
+    public static final String NO_UZ = "❌ Yo'q";
+    public static final String NO_RU = "❌ Нет";
     public static final String STOCK_IN_UZ = "📥 Kirim";
     public static final String STOCK_IN_RU = "📥 Приход";
     public static final String STOCK_OUT_UZ = "📤 Chiqim";
@@ -81,9 +93,10 @@ public final class Keyboards {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
         rows.add(row(products(lang), brons(lang)));
-        rows.add(row(addProduct(lang), report(lang)));
+        rows.add(row(addProduct(lang), deleteProduct(lang)));
         rows.add(row(stockIn(lang), stockOut(lang)));
-        rows.add(row(subscription(lang), help(lang)));
+        rows.add(row(report(lang), subscription(lang)));
+        rows.add(row(help(lang)));
         return markup(rows);
     }
 
@@ -97,9 +110,9 @@ public final class Keyboards {
         rows.add(languageRow());
         if (egasi) {
             rows.add(row(products(lang), brons(lang)));
-            rows.add(row(addProduct(lang), report(lang)));
+            rows.add(row(addProduct(lang), deleteProduct(lang)));
             rows.add(row(stockIn(lang), stockOut(lang)));
-            rows.add(row(subscription(lang)));
+            rows.add(row(report(lang), subscription(lang)));
         }
         rows.add(row(adminAddPharmacy(lang), adminPharmacies(lang)));
         rows.add(row(adminClaims(lang), adminOrders(lang)));
@@ -258,6 +271,41 @@ public final class Keyboards {
     public static boolean isSkip(String text) { return eq(text, SKIP_UZ, SKIP_RU, "O'tkazib yuborish", "Пропустить"); }
     public static boolean isClaim(String text) { return eq(text, CLAIM_UZ, CLAIM_RU); }
     public static boolean isProducts(String text) { return eq(text, PRODUCTS_UZ, PRODUCTS_RU); }
+    public static boolean isDeleteProduct(String text) { return eq(text, DELETE_PRODUCT_UZ, DELETE_PRODUCT_RU); }
+    public static boolean isPrevPage(String text) { return eq(text, PREV_UZ, PREV_RU); }
+    public static boolean isNextPage(String text) { return eq(text, NEXT_UZ, NEXT_RU); }
+    public static boolean isPageLabel(String text) { return text != null && text.matches("📄 \\d+/\\d+"); }
+    public static boolean isShowAll(String text) { return eq(text, ALL_UZ, ALL_RU); }
+    public static boolean isYesDelete(String text) { return eq(text, YES_DELETE_UZ, YES_DELETE_RU); }
+    public static boolean isNo(String text) { return eq(text, NO_UZ, NO_RU); }
+    public static String deleteProduct(String lang) { return isRu(lang) ? DELETE_PRODUCT_RU : DELETE_PRODUCT_UZ; }
+
+    /**
+     * Sahifali pastki klaviatura: har bir nom — alohida katta tugma, pastda
+     * «◀️ Oldingi | 📄 1/5 | Keyingi ▶️» va «Bekor qilish». Hamma nomni bitta klaviaturaga
+     * joylab bo'lmaydi — yuzlab tugmada Telegram xabarni rad etadi.
+     */
+    public static ReplyKeyboard pagedMenu(String lang, List<String> names, int page, int pages, boolean filtered) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        for (String name : names) rows.add(row(name));
+        if (filtered) rows.add(row(isRu(lang) ? ALL_RU : ALL_UZ));
+        if (pages > 1) {
+            KeyboardRow nav = new KeyboardRow();
+            if (page > 0) nav.add(isRu(lang) ? PREV_RU : PREV_UZ);
+            nav.add("📄 " + (page + 1) + "/" + pages);
+            if (page < pages - 1) nav.add(isRu(lang) ? NEXT_RU : NEXT_UZ);
+            rows.add(nav);
+        }
+        rows.add(row(cancel(lang)));
+        return markup(rows);
+    }
+
+    public static ReplyKeyboard confirmDeleteMenu(String lang) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(row(isRu(lang) ? YES_DELETE_RU : YES_DELETE_UZ, isRu(lang) ? NO_RU : NO_UZ));
+        return markup(rows);
+    }
+
     public static boolean isAddProduct(String text) { return eq(text, ADD_PRODUCT_UZ, ADD_PRODUCT_RU); }
     public static boolean isAddFromFile(String text) { return eq(text, ADD_FROM_FILE_UZ, ADD_FROM_FILE_RU); }
     public static boolean isAddManually(String text) { return eq(text, ADD_MANUALLY_UZ, ADD_MANUALLY_RU); }
