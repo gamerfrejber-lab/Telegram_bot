@@ -30,4 +30,7 @@ public interface Sender {
      * Yuklab bo'lmasa null qaytadi.
      */
     byte[] download(String fileId);
+
+    /** Bazada baytlar sifatida saqlangan rasmni yuboradi (masalan, saytdan kelgan to'lov cheki). */
+    void photoBytes(long chatId, byte[] data, String caption);
 }

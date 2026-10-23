@@ -52,6 +52,8 @@ public final class Keyboards {
     public static final String STOCK_OUT_RU = "📤 Расход";
     public static final String BRONS_UZ = "🔔 Bronlar";
     public static final String BRONS_RU = "🔔 Брони";
+    public static final String DELIVERIES_UZ = "🚚 Yetkazish";
+    public static final String DELIVERIES_RU = "🚚 Доставка";
     public static final String REPORT_UZ = "📈 Hisobot";
     public static final String REPORT_RU = "📈 Отчёт";
     public static final String SUBSCRIPTION_UZ = "🗓 Obunam";
@@ -93,6 +95,7 @@ public final class Keyboards {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
         rows.add(row(products(lang), brons(lang)));
+        rows.add(row(deliveries(lang)));
         rows.add(row(addProduct(lang), deleteProduct(lang)));
         rows.add(row(stockIn(lang), stockOut(lang)));
         rows.add(row(report(lang), subscription(lang)));
@@ -110,6 +113,7 @@ public final class Keyboards {
         rows.add(languageRow());
         if (egasi) {
             rows.add(row(products(lang), brons(lang)));
+            rows.add(row(deliveries(lang)));
             rows.add(row(addProduct(lang), deleteProduct(lang)));
             rows.add(row(stockIn(lang), stockOut(lang)));
             rows.add(row(report(lang), subscription(lang)));
@@ -255,6 +259,35 @@ public final class Keyboards {
                 button(ru ? "❌ Отмена" : "❌ Bekor", "bron:bekor:" + bronId))));
     }
 
+    /**
+     * Yetkazish buyurtmasi tugmalari holatga qarab: yangi — qabul (taxminiy vaqt bilan) yoki rad;
+     * qabul qilingan — yo'lga chiqdi / yetkazildi; yo'lda — yetkazildi. Chek kelgan bo'lsa — "To'lov keldi".
+     */
+    public static InlineKeyboardMarkup yetkazishActions(long id, String holat, boolean chekKeldi, String lang) {
+        boolean ru = isRu(lang);
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        switch (holat) {
+            case "YANGI" -> {
+                rows.add(List.of(
+                        button(ru ? "✅ Принять (30 мин)" : "✅ Qabul (30 daq)", "yetk:q30:" + id),
+                        button(ru ? "✅ Принять (60 мин)" : "✅ Qabul (60 daq)", "yetk:q60:" + id)));
+                rows.add(List.of(button(ru ? "❌ Отклонить" : "❌ Rad etish", "yetk:bekor:" + id)));
+            }
+            case "QABUL" -> {
+                rows.add(List.of(
+                        button(ru ? "🚚 Курьер выехал" : "🚚 Yo'lga chiqdi", "yetk:yol:" + id),
+                        button(ru ? "📦 Доставлен" : "📦 Yetkazildi", "yetk:ok:" + id)));
+                rows.add(List.of(button(ru ? "❌ Отменить" : "❌ Bekor qilish", "yetk:bekor:" + id)));
+            }
+            case "YOLDA" -> rows.add(List.of(
+                    button(ru ? "📦 Доставлен" : "📦 Yetkazildi", "yetk:ok:" + id),
+                    button(ru ? "❌ Отменить" : "❌ Bekor", "yetk:bekor:" + id)));
+            default -> { }
+        }
+        if (chekKeldi) rows.add(List.of(button(ru ? "💳 Оплата получена" : "💳 To'lov keldi", "yetk:tolov:" + id)));
+        return rows.isEmpty() ? null : inline(rows);
+    }
+
     private static InlineKeyboardMarkup inline(List<List<InlineKeyboardButton>> rows) {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(rows);
@@ -312,6 +345,7 @@ public final class Keyboards {
     public static boolean isStockIn(String text) { return eq(text, STOCK_IN_UZ, STOCK_IN_RU); }
     public static boolean isStockOut(String text) { return eq(text, STOCK_OUT_UZ, STOCK_OUT_RU); }
     public static boolean isBrons(String text) { return eq(text, BRONS_UZ, BRONS_RU) || startsWith(text, BRONS_UZ, BRONS_RU); }
+    public static boolean isDeliveries(String text) { return eq(text, DELIVERIES_UZ, DELIVERIES_RU) || startsWith(text, DELIVERIES_UZ, DELIVERIES_RU); }
     public static boolean isReport(String text) { return eq(text, REPORT_UZ, REPORT_RU); }
     public static boolean isSubscription(String text) { return eq(text, SUBSCRIPTION_UZ, SUBSCRIPTION_RU); }
     public static boolean isAdminAddPharmacy(String text) { return eq(text, ADMIN_ADD_PHARMACY_UZ, ADMIN_ADD_PHARMACY_RU); }
@@ -335,6 +369,7 @@ public final class Keyboards {
     public static String stockIn(String lang) { return isRu(lang) ? STOCK_IN_RU : STOCK_IN_UZ; }
     public static String stockOut(String lang) { return isRu(lang) ? STOCK_OUT_RU : STOCK_OUT_UZ; }
     public static String brons(String lang) { return isRu(lang) ? BRONS_RU : BRONS_UZ; }
+    public static String deliveries(String lang) { return isRu(lang) ? DELIVERIES_RU : DELIVERIES_UZ; }
     public static String report(String lang) { return isRu(lang) ? REPORT_RU : REPORT_UZ; }
     public static String subscription(String lang) { return isRu(lang) ? SUBSCRIPTION_RU : SUBSCRIPTION_UZ; }
     public static String adminAddPharmacy(String lang) { return isRu(lang) ? ADMIN_ADD_PHARMACY_RU : ADMIN_ADD_PHARMACY_UZ; }

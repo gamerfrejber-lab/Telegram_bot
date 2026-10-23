@@ -144,4 +144,21 @@ public class PharmacyBot extends TelegramLongPollingBot implements Sender {
             System.out.println("Rasm yuborilmadi (chat " + chatId + "): " + e.getMessage());
         }
     }
+
+    @Override
+    public void photoBytes(long chatId, byte[] data, String caption) {
+        if (data == null || data.length == 0) return;
+        SendPhoto photo = new SendPhoto();
+        photo.setChatId(Long.toString(chatId));
+        photo.setPhoto(new InputFile(new java.io.ByteArrayInputStream(data), "chek.jpg"));
+        if (caption != null) {
+            photo.setCaption(caption);
+            photo.setParseMode("HTML");
+        }
+        try {
+            execute(photo);
+        } catch (Exception e) {
+            System.out.println("Chek rasmi yuborilmadi (chat " + chatId + "): " + e.getMessage());
+        }
+    }
 }

@@ -158,6 +158,50 @@ public final class Database {
                 CREATE INDEX IF NOT EXISTS bron_dorixona_idx ON bron (dorixona_id);
                 CREATE INDEX IF NOT EXISTS bron_egaga_xabar_idx ON bron (egaga_xabar);
                 CREATE INDEX IF NOT EXISTS bron_mijozga_xabar_idx ON bron (mijozga_xabar);
+
+                -- Yetkazib berish: mijoz saytda buyurtma beradi, dorini dorixona o'zi yetkazadi.
+                -- Tuzilma saytdagi YetkazishService bilan bir xil (qaysi biri birinchi ishga tushsa, o'sha yaratadi).
+                CREATE TABLE IF NOT EXISTS yetkazish (
+                    id BIGSERIAL PRIMARY KEY,
+                    dorixona_id BIGINT NOT NULL,
+                    mijoz_telegram_id BIGINT,
+                    mijoz_ismi VARCHAR(200),
+                    mijoz_telefon VARCHAR(40),
+                    manzil VARCHAR(500) NOT NULL,
+                    izoh VARCHAR(500),
+                    latitude DOUBLE PRECISION,
+                    longitude DOUBLE PRECISION,
+                    masofa_km DOUBLE PRECISION,
+                    dori_summa DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    yetkazish_narxi DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    tolov_usuli VARCHAR(20) NOT NULL DEFAULT 'NAQD',
+                    tolov_holati VARCHAR(20),
+                    tolov_cheki BYTEA,
+                    holat VARCHAR(20) NOT NULL DEFAULT 'YANGI',
+                    bekor_sababi VARCHAR(300),
+                    kuryer_telefon VARCHAR(40),
+                    taxminiy_daqiqa INTEGER,
+                    kod VARCHAR(10),
+                    egaga_xabar BOOLEAN NOT NULL DEFAULT FALSE,
+                    egaga_hodisa VARCHAR(20),
+                    mijozga_xabar BOOLEAN NOT NULL DEFAULT TRUE,
+                    mijoz_hodisa VARCHAR(20),
+                    chiqim_yozildi BOOLEAN NOT NULL DEFAULT FALSE,
+                    sana TIMESTAMP NOT NULL DEFAULT NOW(),
+                    yangilandi TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS yetkazish_qator (
+                    id BIGSERIAL PRIMARY KEY,
+                    yetkazish_id BIGINT NOT NULL REFERENCES yetkazish(id) ON DELETE CASCADE,
+                    dori_id BIGINT,
+                    nomi VARCHAR(500) NOT NULL,
+                    soni INTEGER NOT NULL,
+                    tur VARCHAR(10) NOT NULL DEFAULT 'dona',
+                    narx DOUBLE PRECISION NOT NULL DEFAULT 0
+                );
+
+                CREATE INDEX IF NOT EXISTS yetkazish_qator_idx ON yetkazish_qator (yetkazish_id);
                 """;
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             for (String statement : ddl.split(";")) {
