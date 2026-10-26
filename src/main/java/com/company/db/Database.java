@@ -97,6 +97,9 @@ public final class Database {
                 -- Dorixonaning egasi: tasdiqlangandan keyin shu Telegram hisobiga biriktiriladi.
                 ALTER TABLE dorixona ADD COLUMN IF NOT EXISTS egasi_telegram_id BIGINT;
 
+                -- Kategoriya belgilarini sayt yozadi (masalan ,antibiotiklar,retseptli,) va bot ularni faqat oqiydi.
+                ALTER TABLE dori ADD COLUMN IF NOT EXISTS kategoriya VARCHAR(120);
+
                 -- Shu botdan foydalanuvchilar (dorixona egalari). Til tanlovi bot qayta
                 -- ishga tushganda ham saqlanib qolishi uchun kerak.
                 CREATE TABLE IF NOT EXISTS dorixona_foydalanuvchi (

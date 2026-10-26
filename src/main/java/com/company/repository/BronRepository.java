@@ -22,6 +22,7 @@ public class BronRepository {
     private static final String SELECT =
             "SELECT b.id, b.dori_id, b.dorixona_id, b.mijoz_telegram_id, b.mijoz_ismi, b.mijoz_telefon, "
             + "b.soni, b.kod, b.holat, b.sana, d.nomi AS dori_nomi, d.narx AS dori_narx, "
+            + "COALESCE(d.kategoriya, '') LIKE '%,retseptli,%' AS retseptli, "
             + "p.nomi AS dorixona_nomi "
             + "FROM bron b JOIN dori d ON d.id = b.dori_id JOIN dorixona p ON p.id = b.dorixona_id";
 
@@ -157,6 +158,7 @@ public class BronRepository {
                 b.setDoriNomi(rs.getString("dori_nomi"));
                 b.setNarx(rs.getDouble("dori_narx"));
                 b.setDorixonaNomi(rs.getString("dorixona_nomi"));
+                b.setRetseptli(rs.getBoolean("retseptli"));
                 list.add(b);
             }
             return list;

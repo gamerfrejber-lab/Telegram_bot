@@ -508,6 +508,10 @@ public class Router {
         StringBuilder sb = new StringBuilder();
         sb.append(ru ? "🔔 <b>Бронь №" : "🔔 <b>Bron №").append(bron.getId()).append("</b>\n\n");
         sb.append("💊 <b>").append(esc(bron.getDoriNomi())).append("</b>\n");
+        if (bron.isRetseptli()) {
+            sb.append(ru ? "📋 <b>Рецептурный препарат</b> — отпускайте только по оригиналу рецепта с подписью и печатью врача.\n"
+                    : "📋 <b>Retseptli dori</b> — faqat shifokor imzosi va muhri bor asl retseptni ko'rib bering.\n");
+        }
         sb.append(ru ? "🔢 Количество: <b>" : "🔢 Soni: <b>").append(bron.getSoni()).append(ru ? "</b> шт.\n" : "</b> ta\n");
         sb.append(ru ? "💵 Цена: " : "💵 Narxi: ").append(son(bron.getNarx())).append(ru ? " сум\n" : " so'm\n");
         if (bron.getMijozIsmi() != null && !bron.getMijozIsmi().isBlank()) {

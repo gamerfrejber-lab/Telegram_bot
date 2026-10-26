@@ -32,6 +32,8 @@ public class Bron {
     private String doriNomi;
     private String dorixonaNomi;
     private double narx;
+    /** Dori retsept bilan beriladi (sayt belgilaydi) — egasiga eslatma chiqadi. */
+    private boolean retseptli;
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -71,6 +73,9 @@ public class Bron {
 
     public double getNarx() { return narx; }
     public void setNarx(double narx) { this.narx = narx; }
+
+    public boolean isRetseptli() { return retseptli; }
+    public void setRetseptli(boolean retseptli) { this.retseptli = retseptli; }
 
     /** Holatni odam o'qiy oladigan ko'rinishda (belgisi bilan). */
     public String holatMatni(boolean ru) {
