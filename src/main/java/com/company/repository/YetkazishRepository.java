@@ -50,6 +50,11 @@ public class YetkazishRepository {
      * mijozlar boti orqali xabar boradi. Eski xabardagi tugma qayta bosilsa false qaytadi.
      */
     public boolean holatniOzgartir(long id, long dorixonaId, String yangi, Integer daqiqa, String sabab) {
+        return holatniOzgartir(id, dorixonaId, yangi, daqiqa, sabab, null);
+    }
+
+    /** kuryerTelefon — "Yo'lga chiqdi"da mijozga yuboriladi (saytdagi kabi; null bo'lsa o'zgarmaydi). */
+    public boolean holatniOzgartir(long id, long dorixonaId, String yangi, Integer daqiqa, String sabab, String kuryerTelefon) {
         String oldingi = switch (yangi) {
             case Yetkazish.QABUL -> "'YANGI'";
             case Yetkazish.YOLDA -> "'QABUL'";
@@ -59,15 +64,17 @@ public class YetkazishRepository {
         };
         if (oldingi == null) return false;
         String sql = "UPDATE yetkazish SET holat = ?, mijozga_xabar = FALSE, mijoz_hodisa = ?, yangilandi = NOW(), "
-                + "taxminiy_daqiqa = COALESCE(?, taxminiy_daqiqa), bekor_sababi = COALESCE(?, bekor_sababi) "
+                + "taxminiy_daqiqa = COALESCE(?, taxminiy_daqiqa), bekor_sababi = COALESCE(?, bekor_sababi), "
+                + "kuryer_telefon = COALESCE(?, kuryer_telefon) "
                 + "WHERE id = ? AND dorixona_id = ? AND holat IN (" + oldingi + ")";
         try (Connection conn = Database.getConnection(); PreparedStatement st = conn.prepareStatement(sql)) {
             st.setString(1, yangi);
             st.setString(2, yangi);
             if (daqiqa == null) st.setNull(3, java.sql.Types.INTEGER); else st.setInt(3, daqiqa);
             st.setString(4, Yetkazish.BEKOR.equals(yangi) ? (sabab == null ? "Dorixona buyurtmani bajara olmadi" : sabab) : null);
-            st.setLong(5, id);
-            st.setLong(6, dorixonaId);
+            st.setString(5, kuryerTelefon == null || kuryerTelefon.isBlank() ? null : kuryerTelefon.trim());
+            st.setLong(6, id);
+            st.setLong(7, dorixonaId);
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new IllegalStateException("Yetkazish holatini o'zgartirib bo'lmadi", e);

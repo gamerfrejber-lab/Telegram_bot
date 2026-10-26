@@ -8,6 +8,7 @@ public class Dori {
     private String nomiRu;
     private String ishlabChiqaruvchi;
     private double narx;
+    private double pachkaNarx;
     private boolean mavjud = true;
     private long dorixonaId;
     private int qoldiq;
@@ -27,6 +28,9 @@ public class Dori {
 
     public double getNarx() { return narx; }
     public void setNarx(double narx) { this.narx = narx; }
+
+    public double getPachkaNarx() { return pachkaNarx; }
+    public void setPachkaNarx(double pachkaNarx) { this.pachkaNarx = pachkaNarx; }
 
     public boolean isMavjud() { return mavjud; }
     public void setMavjud(boolean mavjud) { this.mavjud = mavjud; }

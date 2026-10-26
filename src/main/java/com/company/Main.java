@@ -21,6 +21,8 @@ public class Main {
             PharmacyBot bot = new PharmacyBot();
             TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
             api.registerBot(bot);
+            // "/" menyusi: koddagi buyruqlar ro'yxati (tugmalar bilan bir xil ishlaydi).
+            com.company.telegram.Buyruqlar.ornat(bot);
             System.out.println("Dorixonalar boti ishga tushdi: @" + bot.getBotUsername());
 
             new BronNotifier(bot.router()).start();

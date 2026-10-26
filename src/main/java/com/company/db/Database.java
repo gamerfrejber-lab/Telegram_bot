@@ -99,6 +99,8 @@ public final class Database {
 
                 -- Kategoriya belgilarini sayt yozadi (masalan ,antibiotiklar,retseptli,) va bot ularni faqat oqiydi.
                 ALTER TABLE dori ADD COLUMN IF NOT EXISTS kategoriya VARCHAR(120);
+                -- Pachka narxi (sayt va mijozlar boti ham ishlatadi), 0 bo'lsa faqat donalab sotiladi.
+                ALTER TABLE dori ADD COLUMN IF NOT EXISTS pachka_narx DOUBLE PRECISION DEFAULT 0;
 
                 -- Shu botdan foydalanuvchilar (dorixona egalari). Til tanlovi bot qayta
                 -- ishga tushganda ham saqlanib qolishi uchun kerak.

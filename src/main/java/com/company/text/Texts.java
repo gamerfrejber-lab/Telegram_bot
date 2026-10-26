@@ -42,10 +42,14 @@ public final class Texts {
                       ➕ <b>Добавить товар</b> — новое лекарство или медизделие.
                       📥 <b>Приход</b> / 📤 <b>Расход</b> — учёт склада.
                       🔔 <b>Брони</b> — заказы покупателей: подтвердить, выдать или отменить.
+                      🚚 <b>Доставка</b> — заказы с доставкой: принять, курьер в пути, доставлен.
+                      🏥 <b>Моя аптека</b> — название, адрес, телефон, часы работы, место на карте и настройки доставки.
                       📈 <b>Отчёт</b> — сколько поступило, продано, осталось.
 
-                      👨‍💻 Админ: @Anvarovich_2bot
-                      ❓ Если у вас есть вопросы, можете обратиться к админу.
+                      💻 Всё то же самое можно делать и на сайте: doriqidiruv.com/dorixonachi
+                      ⌨️ Команды — кнопка «/» внизу.
+
+                      ❓ Вопрос админу: @dori_UzBot → /help → «Написать админу».
                       """
                     : """
                       🆘 <b>Yordam bo'limi</b>
@@ -57,10 +61,14 @@ public final class Texts {
                       ➕ <b>Mahsulot qo'shish</b> — yangi dori yoki tibbiy buyum.
                       📥 <b>Kirim</b> / 📤 <b>Chiqim</b> — ombor hisobi.
                       🔔 <b>Bronlar</b> — xaridorlar buyurtmasi: tasdiqlash, berish yoki bekor qilish.
+                      🚚 <b>Yetkazish</b> — yetkazish buyurtmalari: qabul qilish, kuryer yo'lda, yetkazildi.
+                      🏥 <b>Dorixonam</b> — nomi, manzil, telefon, ish vaqti, xaritadagi joyi va yetkazish sozlamalari.
                       📈 <b>Hisobot</b> — qancha keldi, qancha sotildi, qancha qoldi.
 
-                      👨‍💻 Admin: @Anvarovich_2bot
-                      ❓ Qandaydir savolingiz bo'lsa, adminga murojaat qilishingiz mumkin.
+                      💻 Hammasini saytda ham qilish mumkin: doriqidiruv.com/dorixonachi
+                      ⌨️ Buyruqlar — pastdagi «/» tugmasi.
+
+                      ❓ Adminga savol: @dori_UzBot → /help → «Adminga yozish».
                       """;
 
             case "chooseMenu" -> ru ? "📋 Выберите из меню:" : "📋 Menyudan tanlang:";

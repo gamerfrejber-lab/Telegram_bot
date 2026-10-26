@@ -19,7 +19,8 @@ import java.util.List;
 public class DrugRepository {
 
     private static final String SELECT =
-            "SELECT d.id, d.nomi, d.nomi_ru, d.ishlab_chiqaruvchi, d.narx, d.mavjud, d.dorixona_id, "
+            "SELECT d.id, d.nomi, d.nomi_ru, d.ishlab_chiqaruvchi, d.narx, COALESCE(d.pachka_narx, 0) AS pachka_narx, "
+            + "d.mavjud, d.dorixona_id, "
             + "COALESCE((SELECT SUM(CASE WHEN h.turi = 'KIRIM' THEN h.soni ELSE -h.soni END) "
             + "          FROM ombor_harakat h WHERE h.dori_id = d.id), 0) AS qoldiq, "
             + "COALESCE((SELECT SUM(h.soni) FROM ombor_harakat h "
@@ -63,8 +64,8 @@ public class DrugRepository {
     }
 
     public long add(Dori dori) {
-        String sql = "INSERT INTO dori (nomi, nomi_ru, ishlab_chiqaruvchi, narx, mavjud, dorixona_id) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO dori (nomi, nomi_ru, ishlab_chiqaruvchi, narx, mavjud, dorixona_id, pachka_narx) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, dori.getNomi());
@@ -73,6 +74,7 @@ public class DrugRepository {
             stmt.setDouble(4, dori.getNarx());
             stmt.setBoolean(5, dori.isMavjud());
             stmt.setLong(6, dori.getDorixonaId());
+            stmt.setDouble(7, dori.getPachkaNarx());
             stmt.executeUpdate();
             try (ResultSet keys = stmt.getGeneratedKeys()) {
                 if (keys.next()) return keys.getLong(1);
@@ -80,6 +82,24 @@ public class DrugRepository {
             return 0;
         } catch (SQLException e) {
             throw new IllegalStateException("Mahsulot qo'shib bo'lmadi", e);
+        }
+    }
+
+    /**
+     * Dona va pachka narxini yangilaydi (saytdagi "✏️ Narx" bilan bir xil). pachkaNarx null — pachka narxi
+     * o'zgarmaydi, 0 — olib tashlanadi (faqat donalab sotiladi).
+     */
+    public boolean narxniYangila(long doriId, long dorixonaId, double narx, Double pachkaNarx) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "UPDATE dori SET narx = ?, pachka_narx = COALESCE(?, pachka_narx) WHERE id = ? AND dorixona_id = ?")) {
+            stmt.setDouble(1, narx);
+            if (pachkaNarx == null) stmt.setNull(2, java.sql.Types.DOUBLE); else stmt.setDouble(2, pachkaNarx);
+            stmt.setLong(3, doriId);
+            stmt.setLong(4, dorixonaId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Narxni yangilab bo'lmadi", e);
         }
     }
 
@@ -169,6 +189,7 @@ public class DrugRepository {
                 d.setNomiRu(rs.getString("nomi_ru"));
                 d.setIshlabChiqaruvchi(rs.getString("ishlab_chiqaruvchi"));
                 d.setNarx(rs.getDouble("narx"));
+                d.setPachkaNarx(rs.getDouble("pachka_narx"));
                 d.setMavjud(rs.getBoolean("mavjud"));
                 d.setDorixonaId(rs.getLong("dorixona_id"));
                 d.setQoldiq(rs.getInt("qoldiq"));

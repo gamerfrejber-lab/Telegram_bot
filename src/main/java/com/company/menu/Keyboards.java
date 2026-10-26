@@ -54,6 +54,10 @@ public final class Keyboards {
     public static final String BRONS_RU = "🔔 Брони";
     public static final String DELIVERIES_UZ = "🚚 Yetkazish";
     public static final String DELIVERIES_RU = "🚚 Доставка";
+    public static final String MY_PHARMACY_UZ = "🏥 Dorixonam";
+    public static final String MY_PHARMACY_RU = "🏥 Моя аптека";
+    public static final String SEND_LOCATION_UZ = "📍 Joylashuvni yuborish";
+    public static final String SEND_LOCATION_RU = "📍 Отправить геопозицию";
     public static final String REPORT_UZ = "📈 Hisobot";
     public static final String REPORT_RU = "📈 Отчёт";
     public static final String SUBSCRIPTION_UZ = "🗓 Obunam";
@@ -95,7 +99,7 @@ public final class Keyboards {
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(languageRow());
         rows.add(row(products(lang), brons(lang)));
-        rows.add(row(deliveries(lang)));
+        rows.add(row(deliveries(lang), myPharmacy(lang)));
         rows.add(row(addProduct(lang), deleteProduct(lang)));
         rows.add(row(stockIn(lang), stockOut(lang)));
         rows.add(row(report(lang), subscription(lang)));
@@ -113,7 +117,7 @@ public final class Keyboards {
         rows.add(languageRow());
         if (egasi) {
             rows.add(row(products(lang), brons(lang)));
-            rows.add(row(deliveries(lang)));
+            rows.add(row(deliveries(lang), myPharmacy(lang)));
             rows.add(row(addProduct(lang), deleteProduct(lang)));
             rows.add(row(stockIn(lang), stockOut(lang)));
             rows.add(row(report(lang), subscription(lang)));
@@ -218,8 +222,58 @@ public final class Keyboards {
     public static InlineKeyboardMarkup productCard(long doriId, int page, String lang) {
         boolean ru = isRu(lang);
         return inline(List.of(
+                List.of(button(ru ? "✏️ Изменить цену" : "✏️ Narxni o'zgartirish", "dori:narx:" + doriId + ":" + page)),
                 List.of(button(ru ? "🗑 Удалить" : "🗑 O'chirish", "dori:ochir:" + doriId + ":" + page)),
                 List.of(button(ru ? "⬅️ К списку" : "⬅️ Ro'yxatga", "dori:sahifa:" + page))));
+    }
+
+    /** Til tanlash (/til). */
+    public static ReplyKeyboard languageMenu(String lang) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(languageRow());
+        rows.add(row(cancel(lang)));
+        return markup(rows);
+    }
+
+    /** Dorixonaning xaritadagi joyini yuborish tugmasi. */
+    public static ReplyKeyboard locationMenu(String lang) {
+        KeyboardButton joy = new KeyboardButton(isRu(lang) ? SEND_LOCATION_RU : SEND_LOCATION_UZ);
+        joy.setRequestLocation(true);
+        KeyboardRow r = new KeyboardRow();
+        r.add(joy);
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(r);
+        rows.add(row(cancel(lang)));
+        return markup(rows);
+    }
+
+    /** "🏥 Dorixonam": saytdagi "Ma'lumotlar" bo'limi bilan bir xil maydonlar. */
+    public static InlineKeyboardMarkup myPharmacyActions(String lang) {
+        boolean ru = isRu(lang);
+        return inline(List.of(
+                List.of(button(ru ? "✏️ Название" : "✏️ Nomi", "sz:nomi:0"),
+                        button(ru ? "📍 Адрес" : "📍 Manzil", "sz:manzil:0")),
+                List.of(button(ru ? "☎️ Телефон" : "☎️ Telefon", "sz:tel:0"),
+                        button(ru ? "🕘 Часы работы" : "🕘 Ish vaqti", "sz:vaqt:0")),
+                List.of(button(ru ? "🗺 Место на карте" : "🗺 Xaritadagi joyi", "sz:joy:0")),
+                List.of(button(ru ? "🚚 Настройки доставки" : "🚚 Yetkazish sozlamalari", "sz:yetk:0"))));
+    }
+
+    /** Yetkazish sozlamalari: saytdagi "Yetkazish → Sozlamalar" bilan bir xil. */
+    public static InlineKeyboardMarkup deliverySettings(boolean yoqilgan, boolean naqd, String lang) {
+        boolean ru = isRu(lang);
+        return inline(List.of(
+                List.of(button(yoqilgan ? (ru ? "⛔ Выключить доставку" : "⛔ Yetkazishni o'chirish")
+                        : (ru ? "✅ Включить доставку" : "✅ Yetkazishni yoqish"), "sz:yoq:0")),
+                List.of(button(ru ? "💵 Цена доставки" : "💵 Yetkazish narxi", "sz:ynarx:0"),
+                        button(ru ? "📏 За 1 км" : "📏 Har km uchun", "sz:ykm:0")),
+                List.of(button(ru ? "🎁 Бесплатно от" : "🎁 Bepul chegara", "sz:ybepul:0"),
+                        button(ru ? "🧾 Мин. заказ" : "🧾 Eng kam buyurtma", "sz:ymin:0")),
+                List.of(button(ru ? "📍 Радиус" : "📍 Radius", "sz:yrad:0"),
+                        button(ru ? "💳 Номер карты" : "💳 Karta raqami", "sz:ykarta:0")),
+                List.of(button(naqd ? (ru ? "💵 Оплата при получении: да" : "💵 Yetkazilganda to'lov: ha")
+                        : (ru ? "💵 Оплата при получении: нет" : "💵 Yetkazilganda to'lov: yo'q"), "sz:naqd:0")),
+                List.of(button(ru ? "⬅️ Моя аптека" : "⬅️ Dorixonam", "sz:dx:0"))));
     }
 
     private static InlineKeyboardButton button(String text, String data) {
@@ -345,6 +399,7 @@ public final class Keyboards {
     public static boolean isStockIn(String text) { return eq(text, STOCK_IN_UZ, STOCK_IN_RU); }
     public static boolean isStockOut(String text) { return eq(text, STOCK_OUT_UZ, STOCK_OUT_RU); }
     public static boolean isBrons(String text) { return eq(text, BRONS_UZ, BRONS_RU) || startsWith(text, BRONS_UZ, BRONS_RU); }
+    public static boolean isMyPharmacy(String text) { return eq(text, MY_PHARMACY_UZ, MY_PHARMACY_RU); }
     public static boolean isDeliveries(String text) { return eq(text, DELIVERIES_UZ, DELIVERIES_RU) || startsWith(text, DELIVERIES_UZ, DELIVERIES_RU); }
     public static boolean isReport(String text) { return eq(text, REPORT_UZ, REPORT_RU); }
     public static boolean isSubscription(String text) { return eq(text, SUBSCRIPTION_UZ, SUBSCRIPTION_RU); }
@@ -370,6 +425,7 @@ public final class Keyboards {
     public static String stockOut(String lang) { return isRu(lang) ? STOCK_OUT_RU : STOCK_OUT_UZ; }
     public static String brons(String lang) { return isRu(lang) ? BRONS_RU : BRONS_UZ; }
     public static String deliveries(String lang) { return isRu(lang) ? DELIVERIES_RU : DELIVERIES_UZ; }
+    public static String myPharmacy(String lang) { return isRu(lang) ? MY_PHARMACY_RU : MY_PHARMACY_UZ; }
     public static String report(String lang) { return isRu(lang) ? REPORT_RU : REPORT_UZ; }
     public static String subscription(String lang) { return isRu(lang) ? SUBSCRIPTION_RU : SUBSCRIPTION_UZ; }
     public static String adminAddPharmacy(String lang) { return isRu(lang) ? ADMIN_ADD_PHARMACY_RU : ADMIN_ADD_PHARMACY_UZ; }

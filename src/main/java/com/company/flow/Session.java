@@ -14,7 +14,15 @@ public class Session {
         MAHSULOT_QOSHISH,
         KIRIM,
         CHIQIM,
-        OCHIRISH
+        OCHIRISH,
+        /** Mahsulot narxini o'zgartirish: dona, keyin pachka narxi. */
+        NARX,
+        /** Dorixona ma'lumoti (nomi, manzil, telefon, ish vaqti, xaritadagi joyi) — qaysi maydon: nomi. */
+        MALUMOT,
+        /** Yetkazish sozlamasi (narx, km narxi, bepul chegara, eng kam summa, radius, karta) — maydon: nomi. */
+        YETKAZISH_SOZLAMA,
+        /** Yetkazish: "Yo'lga chiqdi" uchun kuryer telefoni yoki bekor qilish sababi. Buyurtma: doriId, amal: nomi. */
+        YETKAZISH_IZOH
     }
 
     private final Turi turi;
@@ -26,6 +34,7 @@ public class Session {
     private String telefon;
     private String ishlabChiqaruvchi;
     private double narx;
+    private double pachkaNarx;
 
     private long dorixonaId;
     private String dorixonaNomi;
@@ -65,6 +74,9 @@ public class Session {
 
     public double getNarx() { return narx; }
     public void setNarx(double narx) { this.narx = narx; }
+
+    public double getPachkaNarx() { return pachkaNarx; }
+    public void setPachkaNarx(double pachkaNarx) { this.pachkaNarx = pachkaNarx; }
 
     public long getDorixonaId() { return dorixonaId; }
     public void setDorixonaId(long dorixonaId) { this.dorixonaId = dorixonaId; }
